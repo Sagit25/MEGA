@@ -1,0 +1,3 @@
+/Users/yangsukhun/graphics-project/src/hw2/build/CMakeFiles/main.dir
+/Users/yangsukhun/graphics-project/src/hw2/build/CMakeFiles/edit_cache.dir
+/Users/yangsukhun/graphics-project/src/hw2/build/CMakeFiles/rebuild_cache.dir

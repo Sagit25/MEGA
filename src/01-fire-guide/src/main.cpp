@@ -274,12 +274,12 @@ int main()
     // skybox
     std::vector<std::string> faces
     {
-        "../resources/skybox/right.jpg",
-        "../resources/skybox/left.jpg",
-        "../resources/skybox/top.jpg",
-        "../resources/skybox/bottom.jpg",
-        "../resources/skybox/front.jpg",
-        "../resources/skybox/back.jpg"
+        "../resources/fireskybox/vulcan_rt.jpg",
+        "../resources/fireskybox/vulcan_lf.jpg",
+        "../resources/fireskybox/vulcan_up.jpg",
+        "../resources/fireskybox/vulcan_dn.jpg",
+        "../resources/fireskybox/vulcan_ft.jpg",
+        "../resources/fireskybox/vulcan_bk.jpg"
     };
     CubemapTexture skyboxTexture = CubemapTexture(faces);
     unsigned int VAOskybox, VBOskybox;

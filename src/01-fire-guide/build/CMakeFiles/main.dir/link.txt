@@ -1,0 +1,1 @@
+/usr/bin/c++ -std=c++11 -arch arm64 -Wl,-search_paths_first -Wl,-headerpad_max_install_names CMakeFiles/main.dir/src/main.cpp.o "CMakeFiles/main.dir/Users/yangsukhun/graphics-project/src/glad.c.o" -o main   -L/Users/yangsukhun/graphics-project/src/hw2/../../lib  -Wl,-rpath,/Users/yangsukhun/graphics-project/src/hw2/../../lib -lglfw -lfreetype -lassimp
