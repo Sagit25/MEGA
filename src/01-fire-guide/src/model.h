@@ -4,20 +4,16 @@
 #include <glad/glad.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-
-// Assimp 헤더 추가
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
-
-#include "mesh.h"
-#include "texture.h"
-
 #include <string>
 #include <vector>
 #include <iostream>
+#include "mesh.h"
+#include "texture.h"
 
-// 메쉬 파트와 해당 파트의 텍스처를 묶어주는 구조체
+// Submesh structure
 struct SubMesh {
     Mesh mesh; 
     Texture* diffuse = nullptr;
@@ -28,7 +24,7 @@ struct SubMesh {
 class Model {
 public:
     std::vector<SubMesh> subMeshes;
-    std::vector<Texture*> textures_loaded; // 중복 로드 방지용 캐시
+    std::vector<Texture*> textures_loaded;
     std::string directory;
     bool ignoreShadow = false;
 
@@ -39,7 +35,6 @@ public:
 private:
     void loadModel(std::string const &path) {
         Assimp::Importer importer;
-        // Triangulate(삼각형화), GenSmoothNormals(노멀 계산), FlipUVs(텍스처 뒤집기) 적용
         const aiScene* scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
 
         if(!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
@@ -61,11 +56,11 @@ private:
         }
     }
 
+    // Submech processing
     SubMesh processMesh(aiMesh *mesh, const aiScene *scene) {
         std::vector<Vertex> vertices;
         std::vector<unsigned int> indices;
 
-        // 1. 정점(Vertex) 데이터 추출
         for(unsigned int i = 0; i < mesh->mNumVertices; i++) {
             Vertex vertex;
             glm::vec3 vector;
@@ -93,7 +88,6 @@ private:
             vertices.push_back(vertex);
         }
 
-        // 2. 인덱스(Index) 데이터 추출
         for(unsigned int i = 0; i < mesh->mNumFaces; i++) {
             aiFace face = mesh->mFaces[i];
             for(unsigned int j = 0; j < face.mNumIndices; j++)
@@ -103,7 +97,7 @@ private:
         SubMesh subMesh;
         subMesh.mesh = Mesh(vertices, indices);
 
-        // 3. 매터리얼(Texture) 추출 (.mtl 파일 기반)
+        // mtl file based load texture
         if(mesh->mMaterialIndex >= 0) {
             aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
             
@@ -119,7 +113,7 @@ private:
                 material->GetTexture(aiTextureType_SPECULAR, 0, &str);
                 subMesh.specular = loadMaterialTexture(str.C_Str());
             }
-            // Normal (일부 모델은 HEIGHT로 노멀맵을 저장함)
+            // Normal
             if(material->GetTextureCount(aiTextureType_HEIGHT) > 0) {
                 aiString str;
                 material->GetTexture(aiTextureType_HEIGHT, 0, &str);
@@ -136,7 +130,6 @@ private:
     Texture* loadMaterialTexture(const char* path) {
         std::string fullPath = directory + "/" + std::string(path);
         
-        // 캐시 확인
         for(unsigned int i = 0; i < textures_loaded.size(); i++) {
             if(textures_loaded[i]->path == fullPath) {
                 return textures_loaded[i];
