@@ -30,7 +30,7 @@ public:
 
     // Update particles at vertices of mesh
     void Update(float dt, float time, Model* targetModel, glm::mat4 modelMatrix) {
-        unsigned int newParticles = 50; 
+        unsigned int newParticles = 5000; 
         for (unsigned int i = 0; i < newParticles; ++i) {
             int unusedParticle = this->firstUnusedParticle();
             this->respawnParticle(this->particles[unusedParticle], targetModel, modelMatrix);

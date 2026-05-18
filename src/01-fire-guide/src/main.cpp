@@ -214,39 +214,15 @@ int main()
     Shader particleShader("../shaders/particle.vs", "../shaders/particle.fs");
 
     // define models
-    // There can be three types 
-    // (1) diffuse, specular, normal : brickCubeModel
-    // (2) diffuse, normal only : boulderModel
-    // (3) diffuse only : grassGroundModel
-    
-    Model brickCubeModel = Model("../resources/brickcube/brickcube.obj");
-    Model boulderModel("../resources/boulder/boulder.obj");
-    Model grassGroundModel = Model("../resources/plane.obj", true);
-    Model barrelModel = Model("../resources/barrel/barrel.obj");
-    Model fireExtModel = Model("../resources/FireExt/FireExt.obj");
     Model toothlessModel = Model("../resources/toothless/toothless.obj");
 
-
     // Add entities to scene.
-    // you can change the position/orientation.
     Scene scene;
-    // scene.addEntity(new Entity(&brickCubeModel, glm::mat4(1.0)));
-    // scene.addEntity(new Entity(&brickCubeModel, glm::translate(glm::vec3(-3.5f, 0.0f, -2.0f)) * glm::rotate(glm::radians(45.0f), glm::vec3(1.0f, 0.0f, 0.0f))));
-    // scene.addEntity(new Entity(&brickCubeModel, glm::translate(glm::vec3(1.0f, 0.5f, -3.0f)) * glm::rotate(glm::radians(45.0f), glm::vec3(0.0f, 0.0f, 1.0f))));
-    // scene.addEntity(new Entity(&barrelModel, glm::vec3(2.5f, 0.0f, -2.0f), 0, 0, 0, 0.1f));
-
-    // glm::mat4 planeWorldTransform = glm::mat4(1.0f);
-    // planeWorldTransform = glm::scale(planeWorldTransform, glm::vec3(planeSize));
-    // planeWorldTransform = glm::translate(glm::vec3(0.0f, -0.5f, 0.0f)) * planeWorldTransform;
-    // scene.addEntity(new Entity(&grassGroundModel, planeWorldTransform));
-
-    // scene.addEntity(new Entity(&fireExtModel, glm::vec3(2,-1,0), 0.0f, 180.0f, 0.0f, 0.002f));
-    // scene.addEntity(new Entity(&boulderModel, glm::vec3(-5, 0, 2), 0.0f, 180.0f, 0.0f, 0.1));
 
     Entity* toothlessEntity = new Entity(&toothlessModel, glm::vec3(1.0f, -3.0f, 5.0f), -90.0f, 180.0f, 0.0f, 0.05f);
     scene.addEntity(toothlessEntity);
 
-    FireParticleSystem fireParticles(particleShader, 1000);
+    FireParticleSystem fireParticles(particleShader, 30000);
 
     // define depth texture
     DepthMapTexture depth = DepthMapTexture(SHADOW_WIDTH, SHADOW_HEIGHT);
@@ -369,7 +345,6 @@ int main()
         glViewport(0, 0, currentWidth, currentHeight);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        // [라이팅 렌더링 루프 (기존 코드와 동일)]
         lightingShader.use();
         lightingShader.setFloat("useLighting", useLighting ? 1.0f : 0.0f);
         lightingShader.setFloat("useShadow", useShadow ? 1.0f : 0.0f);
