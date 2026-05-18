@@ -19,4 +19,4 @@ SNU Graphics Programming course final project
 3. feature 병합
 4. 영상 만들기
 5. 발표
-6. 레포트
+6. update README
