@@ -31,7 +31,7 @@ public:
     /*  Mesh Data  */
     vector<Vertex> vertices;
     vector<unsigned int> indices;
-    unsigned int VAO;
+    unsigned int VAO = 0;
 
     Mesh() {}
     /*  Functions  */

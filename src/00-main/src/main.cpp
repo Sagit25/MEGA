@@ -216,35 +216,34 @@ int main()
 
 
     // define models
-    // There can be three types 
-    // (1) diffuse, specular, normal : brickCubeModel
-    // (2) diffuse, normal only : boulderModel
-    // (3) diffuse only : grassGroundModel
-    Model brickCubeModel = Model("../resources/brickcube/brickcube.obj");
-    brickCubeModel.diffuse = new Texture("../resources/brickcube/brickcube_d.png");
-    brickCubeModel.specular = new Texture("../resources/brickcube/brickcube_s.png");
-    brickCubeModel.normal = new Texture("../resources/brickcube/brickcube_n.png");
+    Model brickCubeModel("../resources/brickcube/brickcube.obj");
+    brickCubeModel.setDiffuse("../resources/brickcube/brickcube_d.png");
+    brickCubeModel.setSpecular("../resources/brickcube/brickcube_s.png");
+    brickCubeModel.setNormal("../resources/brickcube/brickcube_n.png");
 
     Model boulderModel("../resources/boulder/boulder.obj");
-    boulderModel.diffuse = new Texture("../resources/boulder/boulder_d.png");
-    boulderModel.normal = new Texture("../resources/boulder/boulder_n.png");
+    boulderModel.setDiffuse("../resources/boulder/boulder_d.png");
+    boulderModel.setNormal("../resources/boulder/boulder_n.png");
 
-    Model grassGroundModel = Model("../resources/plane.obj");
-    grassGroundModel.diffuse = new Texture("../resources/grass_ground.jpg");
-    grassGroundModel.ignoreShadow = true;
+    Model grassGroundModel = Model("../resources/plane.obj", true);
+    grassGroundModel.setDiffuse("../resources/grass_ground.jpg");
 
-    
-    // TODO: Add more models (barrels, fire extinguisher) and YOUR own model
     Model barrelModel = Model("../resources/barrel/barrel.obj");
-    barrelModel.diffuse = new Texture("../resources/barrel/barrel_d.png");
-    barrelModel.specular = new Texture("../resources/barrel/barrel_s.png");
-    barrelModel.normal = new Texture("../resources/barrel/barrel_n.png");
+    barrelModel.setDiffuse("../resources/barrel/barrel_d.png");
+    barrelModel.setSpecular("../resources/barrel/barrel_s.png");
+    barrelModel.setNormal("../resources/barrel/barrel_n.png");
+
     Model fireExtModel = Model("../resources/FireExt/FireExt.obj");
-    fireExtModel.diffuse = new Texture("../resources/FireExt/FireExt_d.jpg");
-    fireExtModel.specular = new Texture("../resources/FireExt/FireExt_s.jpg");
-    fireExtModel.normal = new Texture("../resources/FireExt/FireExt_n.jpg");
-    Model yourOwnModel = Model("../resources/cat/12221_Cat_v1_l3.obj");
-    yourOwnModel.diffuse = new Texture("../resources/cat/Cat_diffuse.jpg");
+    fireExtModel.setDiffuse("../resources/FireExt/FireExt_d.jpg");
+    fireExtModel.setSpecular("../resources/FireExt/FireExt_s.jpg");
+    fireExtModel.setNormal("../resources/FireExt/FireExt_n.jpg");
+
+    Model catModel = Model("../resources/cat/12221_Cat_v1_l3.obj");
+    catModel.setDiffuse("../resources/cat/Cat_diffuse.jpg");
+
+    Model roomModel = Model("../resources/room/small_house_obj.obj");
+    Model houseModel = Model("../resources/room/Warehouse.obj");
+
 
 
     // Add entities to scene.
@@ -264,9 +263,9 @@ int main()
     scene.addEntity(new Entity(&boulderModel, glm::vec3(-5, 0, 2), 0.0f, 180.0f, 0.0f, 0.1));
 
     // add your model's entity here!
-    scene.addEntity(new Entity(&yourOwnModel, glm::vec3(5.5f, -0.5f, 1.0f), -90.0f, 0.0f, 0.0f, 0.05f));
-
-
+    scene.addEntity(new Entity(&catModel, glm::vec3(5.5f, -0.5f, 1.0f), -90.0f, 0.0f, 0.0f, 0.05f));
+    scene.addEntity(new Entity(&roomModel, glm::vec3(-4.0f, 0.0f, 10.0f), 0.0f, 0.0f, 0.0f, 0.01f));
+    scene.addEntity(new Entity(&houseModel, glm::vec3(4.0f, 0.0f, -10.0f), 0.0f, 0.0f, 0.0f, 1.0f));
     // define depth texture
     DepthMapTexture depth = DepthMapTexture(SHADOW_WIDTH, SHADOW_HEIGHT);
 
@@ -374,11 +373,13 @@ int main()
                 if (model->ignoreShadow) continue;
 
                 // bind meshes
-                glBindVertexArray(model->mesh.VAO);
-                for(Entity* entity : it->second) {
-                    glm::mat4 modelMatrix = entity->getModelMatrix();
-                    csmShader.setMat4("model", modelMatrix);
-                    glDrawElements(GL_TRIANGLES, model->mesh.indices.size(), GL_UNSIGNED_INT, 0);
+                for (const auto& subMesh : model->subMeshes) {
+                    glBindVertexArray(subMesh.mesh.VAO);
+                    for(Entity* entity : it->second) {
+                        glm::mat4 modelMatrix = entity->getModelMatrix();
+                        csmShader.setMat4("model", modelMatrix);
+                        glDrawElements(GL_TRIANGLES, subMesh.mesh.indices.size(), GL_UNSIGNED_INT, 0);
+                    }
                 }
             }
         }
@@ -399,11 +400,13 @@ int main()
                 if (model->ignoreShadow) continue;
 
                 // bind meshes
-                glBindVertexArray(model->mesh.VAO);
-                for(Entity* entity : it->second) {
-                    glm::mat4 modelMatrix = entity->getModelMatrix();
-                    shadowShader.setMat4("model", modelMatrix);
-                    glDrawElements(GL_TRIANGLES, model->mesh.indices.size(), GL_UNSIGNED_INT, 0);
+                for (const auto& subMesh : model->subMeshes) {
+                    glBindVertexArray(subMesh.mesh.VAO);
+                    for(Entity* entity : it->second) {
+                        glm::mat4 modelMatrix = entity->getModelMatrix();
+                        shadowShader.setMat4("model", modelMatrix);
+                        glDrawElements(GL_TRIANGLES, subMesh.mesh.indices.size(), GL_UNSIGNED_INT, 0);
+                    }
                 }
             }
         }
@@ -464,18 +467,41 @@ int main()
             Model* model = it->first;
             if (!model) continue;
 
-            // set useSpecularMap, useNormalMap to shader
-            if (model->specular) lightingShader.setFloat("useSpecularMap", 1.0f);
-            else lightingShader.setFloat("useSpecularMap", 0.0f);
-            if (model->normal && useNormalMap) lightingShader.setFloat("useNormalMap", 1.0f);
-            else lightingShader.setFloat("useNormalMap", 0.0f);
+            for (const auto& subMesh : model->subMeshes) {
+                lightingShader.setVec3("baseColor", subMesh.baseColor);
+                glActiveTexture(GL_TEXTURE0);
+                if (subMesh.diffuse) {
+                    glBindTexture(GL_TEXTURE_2D, subMesh.diffuse->ID);
+                    lightingShader.setFloat("useDiffuseMap", 1.0f);
+                } else {
+                    glBindTexture(GL_TEXTURE_2D, Texture::GetDummyTexture());
+                    lightingShader.setFloat("useDiffuseMap", 0.0f);
+                }
 
-            // bind textures
-            model->bind(); 
-            for(Entity* entity : it->second) {
-                glm::mat4 modelMatrix = entity->getModelMatrix();
-                lightingShader.setMat4("world", modelMatrix);
-                glDrawElements(GL_TRIANGLES, model->mesh.indices.size(), GL_UNSIGNED_INT, 0);
+                glActiveTexture(GL_TEXTURE1);
+                if (subMesh.specular) {
+                    glBindTexture(GL_TEXTURE_2D, subMesh.specular->ID);
+                    lightingShader.setFloat("useSpecularMap", 1.0f);
+                } else {
+                    glBindTexture(GL_TEXTURE_2D, Texture::GetDummyTexture());
+                    lightingShader.setFloat("useSpecularMap", 0.0f);
+                }
+
+                glActiveTexture(GL_TEXTURE2);
+                if (subMesh.normal && useNormalMap) {
+                    glBindTexture(GL_TEXTURE_2D, subMesh.normal->ID);
+                    lightingShader.setFloat("useNormalMap", 1.0f);
+                } else {
+                    glBindTexture(GL_TEXTURE_2D, Texture::GetDummyTexture());
+                    lightingShader.setFloat("useNormalMap", 0.0f);
+                }
+
+                glBindVertexArray(subMesh.mesh.VAO);
+                for(Entity* entity : it->second) {
+                    glm::mat4 modelMatrix = entity->getModelMatrix();
+                    lightingShader.setMat4("world", modelMatrix);
+                    glDrawElements(GL_TRIANGLES, subMesh.mesh.indices.size(), GL_UNSIGNED_INT, 0);
+                }
             }
         }
 
@@ -491,6 +517,7 @@ int main()
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_CUBE_MAP, skyboxTexture.textureID);
         glDrawArrays(GL_TRIANGLES, 0, 36);
+        glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
 
         glBindVertexArray(0);
         glDepthFunc(GL_LESS);

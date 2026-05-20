@@ -35,7 +35,8 @@ void main()
     // if model does not have a normal map, this should be always 0.
     // if useNormalMap is 0, we use a geometric normal as a surface normal.
     // if useNormalMap is 1, we use a geometric normal altered by normal map as a surface normal.
-	if (useNormalMap > 0.5){
+	TBN = mat3(1.0);
+	if (useNormalMap > 0.5 && length(aTangent) > 0.0){
 		// I referenced this part from learnopengl normal code
 		vec3 T = normalize(normalMatrix * aTangent);
 		vec3 N = normalize(normalMatrix * aNormal);

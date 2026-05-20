@@ -16,7 +16,7 @@ public:
     int width;
     int height;
     int channels;
-    std::string path; // Assimp 텍스처 캐싱을 위해 추가된 경로 변수
+    std::string path;
 
     Texture() {}
     Texture(const char* filePath)
