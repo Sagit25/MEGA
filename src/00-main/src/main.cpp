@@ -243,15 +243,14 @@ int main()
 
     Model roomModel = Model("../resources/room/small_house_obj.obj");
     Model houseModel = Model("../resources/room/Warehouse.obj");
+    Model sofaModel = Model("../resources/sofa/sofa.obj");
+    Model tableModel = Model("../resources/table/Center Table.obj");
 
 
 
     // Add entities to scene.
     // you can change the position/orientation.
     Scene scene;
-    scene.addEntity(new Entity(&brickCubeModel, glm::mat4(1.0)));
-    scene.addEntity(new Entity(&brickCubeModel, glm::translate(glm::vec3(-3.5f, 0.0f, -2.0f)) * glm::rotate(glm::radians(45.0f), glm::vec3(1.0f, 0.0f, 0.0f))));
-    scene.addEntity(new Entity(&brickCubeModel, glm::translate(glm::vec3(1.0f, 0.5f, -3.0f)) * glm::rotate(glm::radians(45.0f), glm::vec3(0.0f, 0.0f, 1.0f))));
     scene.addEntity(new Entity(&barrelModel, glm::vec3(2.5f, 0.0f, -2.0f), 0, 0, 0, 0.1f));
 
     glm::mat4 planeWorldTransform = glm::mat4(1.0f);
@@ -260,12 +259,14 @@ int main()
     scene.addEntity(new Entity(&grassGroundModel, planeWorldTransform));
 
     scene.addEntity(new Entity(&fireExtModel, glm::vec3(2,-1,0), 0.0f, 180.0f, 0.0f, 0.002f));
-    scene.addEntity(new Entity(&boulderModel, glm::vec3(-5, 0, 2), 0.0f, 180.0f, 0.0f, 0.1));
 
     // add your model's entity here!
     scene.addEntity(new Entity(&catModel, glm::vec3(5.5f, -0.5f, 1.0f), -90.0f, 0.0f, 0.0f, 0.05f));
     scene.addEntity(new Entity(&roomModel, glm::vec3(-4.0f, 0.0f, 10.0f), 0.0f, 0.0f, 0.0f, 0.01f));
     scene.addEntity(new Entity(&houseModel, glm::vec3(4.0f, 0.0f, -10.0f), 0.0f, 0.0f, 0.0f, 1.0f));
+    scene.addEntity(new Entity(&sofaModel, glm::vec3(0.0f, 0.0f, -5.0f), 0.0f, 180.0f, 0.0f, 1.0f));
+    scene.addEntity(new Entity(&tableModel, glm::vec3(0.0f, 0.0f, 5.0f), 0.0f, 0.0f, 0.0f, 1.0f));
+
     // define depth texture
     DepthMapTexture depth = DepthMapTexture(SHADOW_WIDTH, SHADOW_HEIGHT);
 
