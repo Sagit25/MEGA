@@ -28,11 +28,15 @@ public:
     std::string directory;
     bool ignoreShadow = false;
 
+    // default constructor for child class
+    Model() {}
+
     Model(const char* filePath, bool ignoreShadow = false) : ignoreShadow(ignoreShadow) {
         loadModel(filePath);
     }
 
-private:
+// protected for child class
+protected:
     void loadModel(std::string const &path) {
         Assimp::Importer importer;
         const aiScene* scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
@@ -56,8 +60,8 @@ private:
         }
     }
 
-    // Submech processing
-    SubMesh processMesh(aiMesh *mesh, const aiScene *scene) {
+    // Submech processing (virtual for child class)
+    virtual SubMesh processMesh(aiMesh *mesh, const aiScene *scene) {
         std::vector<Vertex> vertices;
         std::vector<unsigned int> indices;
 
