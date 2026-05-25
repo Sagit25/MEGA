@@ -31,15 +31,19 @@ public:
     // default constructor for child class
     Model() {}
 
-    Model(const char* filePath, bool ignoreShadow = false) : ignoreShadow(ignoreShadow) {
-        loadModel(filePath);
+    Model(const char* filePath, bool ignoreShadow = false, bool uvFlip = true) : ignoreShadow(ignoreShadow) {
+        loadModel(filePath, uvFlip);
     }
 
 // protected for child class
 protected:
-    void loadModel(std::string const &path) {
+    void loadModel(std::string const &path, bool uvFlip = true) {
         Assimp::Importer importer;
-        const aiScene* scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
+        unsigned int postProcessFlags = aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_CalcTangentSpace;
+        if (uvFlip) {
+            postProcessFlags |= aiProcess_FlipUVs;
+        }
+        const aiScene* scene = importer.ReadFile(path, postProcessFlags);
 
         if(!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
             std::cout << "ERROR::ASSIMP:: " << importer.GetErrorString() << std::endl;

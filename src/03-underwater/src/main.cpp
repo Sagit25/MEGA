@@ -220,51 +220,16 @@ int main()
     // (1) diffuse, specular, normal : brickCubeModel
     // (2) diffuse, normal only : boulderModel
     // (3) diffuse only : grassGroundModel
-    Model brickCubeModel = Model("../resources/brickcube/brickcube.obj");
-    brickCubeModel.diffuse = new Texture("../resources/brickcube/brickcube_d.png");
-    brickCubeModel.specular = new Texture("../resources/brickcube/brickcube_s.png");
-    brickCubeModel.normal = new Texture("../resources/brickcube/brickcube_n.png");
-
-    Model boulderModel("../resources/boulder/boulder.obj");
-    boulderModel.diffuse = new Texture("../resources/boulder/boulder_d.png");
-    boulderModel.normal = new Texture("../resources/boulder/boulder_n.png");
-
-    Model grassGroundModel = Model("../resources/plane.obj");
-    grassGroundModel.diffuse = new Texture("../resources/grass_ground.jpg");
-    grassGroundModel.ignoreShadow = true;
-
-    
-    // TODO: Add more models (barrels, fire extinguisher) and YOUR own model
-    Model barrelModel = Model("../resources/barrel/barrel.obj");
-    barrelModel.diffuse = new Texture("../resources/barrel/barrel_d.png");
-    barrelModel.specular = new Texture("../resources/barrel/barrel_s.png");
-    barrelModel.normal = new Texture("../resources/barrel/barrel_n.png");
-    Model fireExtModel = Model("../resources/FireExt/FireExt.obj");
-    fireExtModel.diffuse = new Texture("../resources/FireExt/FireExt_d.jpg");
-    fireExtModel.specular = new Texture("../resources/FireExt/FireExt_s.jpg");
-    fireExtModel.normal = new Texture("../resources/FireExt/FireExt_n.jpg");
-    Model yourOwnModel = Model("../resources/cat/12221_Cat_v1_l3.obj");
-    yourOwnModel.diffuse = new Texture("../resources/cat/Cat_diffuse.jpg");
-
+    Model sharkModel = Model("../resources/fish/shark/shark.dae", false, false);
+    Model bassModel = Model("../resources/fish/bass/bass.dae", false, false);
 
     // Add entities to scene.
     // you can change the position/orientation.
     Scene scene;
-    scene.addEntity(new Entity(&brickCubeModel, glm::mat4(1.0)));
-    scene.addEntity(new Entity(&brickCubeModel, glm::translate(glm::vec3(-3.5f, 0.0f, -2.0f)) * glm::rotate(glm::radians(45.0f), glm::vec3(1.0f, 0.0f, 0.0f))));
-    scene.addEntity(new Entity(&brickCubeModel, glm::translate(glm::vec3(1.0f, 0.5f, -3.0f)) * glm::rotate(glm::radians(45.0f), glm::vec3(0.0f, 0.0f, 1.0f))));
-    scene.addEntity(new Entity(&barrelModel, glm::vec3(2.5f, 0.0f, -2.0f), 0, 0, 0, 0.1f));
-
-    glm::mat4 planeWorldTransform = glm::mat4(1.0f);
-    planeWorldTransform = glm::scale(planeWorldTransform, glm::vec3(planeSize));
-    planeWorldTransform = glm::translate(glm::vec3(0.0f, -0.5f, 0.0f)) * planeWorldTransform;
-    scene.addEntity(new Entity(&grassGroundModel, planeWorldTransform));
-
-    scene.addEntity(new Entity(&fireExtModel, glm::vec3(2,-1,0), 0.0f, 180.0f, 0.0f, 0.002f));
-    scene.addEntity(new Entity(&boulderModel, glm::vec3(-5, 0, 2), 0.0f, 180.0f, 0.0f, 0.1));
-
-    // add your model's entity here!
-    scene.addEntity(new Entity(&yourOwnModel, glm::vec3(5.5f, -0.5f, 1.0f), -90.0f, 0.0f, 0.0f, 0.05f));
+    scene.addEntity(new Entity(&sharkModel, glm::mat4(1.0)));
+    scene.addEntity(new Entity(&sharkModel, glm::translate(glm::vec3(-3.5f, 0.0f, -2.0f)) * glm::rotate(glm::radians(45.0f), glm::vec3(1.0f, 0.0f, 0.0f))));
+    scene.addEntity(new Entity(&sharkModel, glm::translate(glm::vec3(1.0f, 0.5f, -3.0f)) * glm::rotate(glm::radians(45.0f), glm::vec3(0.0f, 0.0f, 1.0f))));
+    scene.addEntity(new Entity(&bassModel, glm::mat4(1.0)));
 
 
     // define depth texture
@@ -367,18 +332,16 @@ int main()
             }
             glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
-            // Iterate using map<Model*, vector<Entity*>>::iterator it = scene.entities.begin()
             for(map<Model*, vector<Entity*>>::iterator it = scene.entities.begin(); it != scene.entities.end(); it++) {
                 Model* model = it->first;
-                if (!model) continue;
-                if (model->ignoreShadow) continue;
-
-                // bind meshes
-                glBindVertexArray(model->mesh.VAO);
+                if (!model || model->ignoreShadow) continue;
                 for(Entity* entity : it->second) {
                     glm::mat4 modelMatrix = entity->getModelMatrix();
                     csmShader.setMat4("model", modelMatrix);
-                    glDrawElements(GL_TRIANGLES, model->mesh.indices.size(), GL_UNSIGNED_INT, 0);
+                    for (const SubMesh& subMesh : model->subMeshes) {
+                        glBindVertexArray(subMesh.mesh.VAO);
+                        glDrawElements(GL_TRIANGLES, subMesh.mesh.indices.size(), GL_UNSIGNED_INT, 0);
+                    }
                 }
             }
         }
@@ -392,18 +355,16 @@ int main()
             shadowShader.use();
             shadowShader.setMat4("lightSpaceMatrix", lightSpaceMatrix);
 
-            // Iterate using map<Model*, vector<Entity*>>::iterator it = scene.entities.begin()
             for(map<Model*, vector<Entity*>>::iterator it = scene.entities.begin(); it != scene.entities.end(); it++) {
                 Model* model = it->first;
-                if (!model) continue;
-                if (model->ignoreShadow) continue;
-
-                // bind meshes
-                glBindVertexArray(model->mesh.VAO);
+                if (!model || model->ignoreShadow) continue;
                 for(Entity* entity : it->second) {
                     glm::mat4 modelMatrix = entity->getModelMatrix();
                     shadowShader.setMat4("model", modelMatrix);
-                    glDrawElements(GL_TRIANGLES, model->mesh.indices.size(), GL_UNSIGNED_INT, 0);
+                    for (const SubMesh& subMesh : model->subMeshes) {
+                        glBindVertexArray(subMesh.mesh.VAO);
+                        glDrawElements(GL_TRIANGLES, subMesh.mesh.indices.size(), GL_UNSIGNED_INT, 0);
+                    }
                 }
             }
         }
@@ -464,18 +425,30 @@ int main()
             Model* model = it->first;
             if (!model) continue;
 
-            // set useSpecularMap, useNormalMap to shader
-            if (model->specular) lightingShader.setFloat("useSpecularMap", 1.0f);
-            else lightingShader.setFloat("useSpecularMap", 0.0f);
-            if (model->normal && useNormalMap) lightingShader.setFloat("useNormalMap", 1.0f);
-            else lightingShader.setFloat("useNormalMap", 0.0f);
-
-            // bind textures
-            model->bind(); 
             for(Entity* entity : it->second) {
                 glm::mat4 modelMatrix = entity->getModelMatrix();
                 lightingShader.setMat4("world", modelMatrix);
-                glDrawElements(GL_TRIANGLES, model->mesh.indices.size(), GL_UNSIGNED_INT, 0);
+
+                for (const SubMesh& subMesh : model->subMeshes) {
+                    lightingShader.setFloat("useSpecularMap", subMesh.specular ? 1.0f : 0.0f);
+                    lightingShader.setFloat("useNormalMap", (subMesh.normal && useNormalMap) ? 1.0f : 0.0f);
+
+                    if (subMesh.diffuse) {
+                        glActiveTexture(GL_TEXTURE0);
+                        glBindTexture(GL_TEXTURE_2D, subMesh.diffuse->ID);
+                    }
+                    if (subMesh.specular) {
+                        glActiveTexture(GL_TEXTURE1);
+                        glBindTexture(GL_TEXTURE_2D, subMesh.specular->ID);
+                    }
+                    if (subMesh.normal && useNormalMap) {
+                        glActiveTexture(GL_TEXTURE2);
+                        glBindTexture(GL_TEXTURE_2D, subMesh.normal->ID);
+                    }
+
+                    glBindVertexArray(subMesh.mesh.VAO);
+                    glDrawElements(GL_TRIANGLES, subMesh.mesh.indices.size(), GL_UNSIGNED_INT, 0);
+                }
             }
         }
 
