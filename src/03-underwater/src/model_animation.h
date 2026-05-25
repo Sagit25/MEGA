@@ -41,6 +41,9 @@ public:
         loadModel(path);
     }
 
+    auto& GetBoneInfoMap() { return m_BoneInfoMap; }
+	int& GetBoneCount() { return m_BoneCounter; }
+
 protected:
 
 	std::map<string, BoneInfo> m_BoneInfoMap;
