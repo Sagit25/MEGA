@@ -5,7 +5,6 @@
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-#include <stb_image.h>
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
@@ -13,6 +12,7 @@
 #include "model.h"
 #include "mesh.h"
 #include "shader.h"
+#include "assimp_glm_helpers.h"
 
 #include <string>
 #include <fstream>
@@ -20,7 +20,6 @@
 #include <iostream>
 #include <map>
 #include <vector>
-#include <assimp_glm_helpers.h>
 
 using namespace std;
 
@@ -36,12 +35,12 @@ class AnimationModel : public Model
 {
 public:
 
-    AnimationModel(string const &path)
+    AnimationModel(const char* filePath, bool ignoreShadow = false, bool uvFlip = true)
     {
-        loadModel(path);
+        loadModel(filePath, uvFlip);
     }
 
-    auto& GetBoneInfoMap() { return m_BoneInfoMap; }
+    std::map<string, BoneInfo>& GetBoneInfoMap() { return m_BoneInfoMap; }
 	int& GetBoneCount() { return m_BoneCounter; }
 
 protected:

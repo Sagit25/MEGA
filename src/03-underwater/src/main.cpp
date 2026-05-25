@@ -19,6 +19,7 @@
 #include "scene.h"
 #include "math_utils.h"
 #include "light.h"
+#include "model_animation.h"
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
@@ -220,8 +221,8 @@ int main()
     // (1) diffuse, specular, normal : brickCubeModel
     // (2) diffuse, normal only : boulderModel
     // (3) diffuse only : grassGroundModel
-    Model sharkModel = Model("../resources/fish/shark/shark.dae", false, false);
-    Model bassModel = Model("../resources/fish/bass/bass.dae", false, false);
+    AnimationModel sharkModel = AnimationModel("../resources/fish/shark/shark.dae", false, false);
+    AnimationModel bassModel = AnimationModel("../resources/fish/bass/bass.dae", false, false);
 
     // Add entities to scene.
     // you can change the position/orientation.
