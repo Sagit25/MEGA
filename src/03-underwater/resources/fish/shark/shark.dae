@@ -182,7 +182,14 @@
       </extra>
     </light>
   </library_lights>
-  <library_images/>
+  <library_images>
+    <image id="body_png" name="body_png">
+      <init_from>body.png</init_from>
+    </image>
+    <image id="mouth_png" name="mouth_png">
+      <init_from>mouth.png</init_from>
+    </image>
+  </library_images>
   <library_effects>
     <effect id="Imageplane_100__white-effect">
       <profile_COMMON>
@@ -212,6 +219,16 @@
     </effect>
     <effect id="Mouth_-_Sharkmouthtexture002_png-effect">
       <profile_COMMON>
+        <newparam sid="mouth_png-surface">
+          <surface type="2D">
+            <init_from>mouth_png</init_from>
+          </surface>
+        </newparam>
+        <newparam sid="mouth_png-sampler">
+          <sampler2D>
+            <source>mouth_png-surface</source>
+          </sampler2D>
+        </newparam>
         <technique sid="common">
           <phong>
             <emission>
@@ -221,7 +238,7 @@
               <color sid="ambient">0 0 0 1</color>
             </ambient>
             <diffuse>
-              <color sid="diffuse">0.64 0.64 0.64 1</color>
+              <texture texture="mouth_png-sampler" texcoord="UVMap"/>
             </diffuse>
             <specular>
               <color sid="specular">0.5 0.5 0.5 1</color>
@@ -238,6 +255,16 @@
     </effect>
     <effect id="Body_-_Sharktexture002_png-effect">
       <profile_COMMON>
+        <newparam sid="body_png-surface">
+          <surface type="2D">
+            <init_from>body_png</init_from>
+          </surface>
+        </newparam>
+        <newparam sid="body_png-sampler">
+          <sampler2D>
+            <source>body_png-surface</source>
+          </sampler2D>
+        </newparam>
         <technique sid="common">
           <phong>
             <emission>
@@ -247,7 +274,7 @@
               <color sid="ambient">0 0 0 1</color>
             </ambient>
             <diffuse>
-              <color sid="diffuse">0.64 0.64 0.64 1</color>
+              <texture texture="body_png-sampler" texcoord="UVMap"/>
             </diffuse>
             <specular>
               <color sid="specular">0.5 0.5 0.5 1</color>
@@ -1138,7 +1165,9 @@
           <skeleton>#Leftfena1</skeleton>
           <bind_material>
             <technique_common>
-              <instance_material symbol="Body_-_Sharktexture002_png-material" target="#Body_-_Sharktexture002_png-material"/>
+              <instance_material symbol="Body_-_Sharktexture002_png-material" target="#Body_-_Sharktexture002_png-material">
+                <bind_vertex_input semantic="UVMap" input_semantic="TEXCOORD" input_set="0"/>
+              </instance_material>
             </technique_common>
           </bind_material>
         </instance_controller>
@@ -1155,7 +1184,9 @@
             <skeleton>#Leftfena1</skeleton>
             <bind_material>
               <technique_common>
-                <instance_material symbol="Mouth_-_Sharkmouthtexture002_png-material" target="#Mouth_-_Sharkmouthtexture002_png-material"/>
+                <instance_material symbol="Mouth_-_Sharkmouthtexture002_png-material" target="#Mouth_-_Sharkmouthtexture002_png-material">
+                  <bind_vertex_input semantic="UVMap" input_semantic="TEXCOORD" input_set="0"/>
+                </instance_material>
               </technique_common>
             </bind_material>
           </instance_controller>

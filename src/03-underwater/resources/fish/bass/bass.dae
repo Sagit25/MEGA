@@ -200,13 +200,23 @@
   <library_effects>
     <effect id="Material_001-effect">
       <profile_COMMON>
+        <newparam sid="bass_png-surface">
+          <surface type="2D">
+            <init_from>bass_png</init_from>
+          </surface>
+        </newparam>
+        <newparam sid="bass_png-sampler">
+          <sampler2D>
+            <source>bass_png-surface</source>
+          </sampler2D>
+        </newparam>
         <technique sid="common">
           <lambert>
             <emission>
               <color sid="emission">0 0 0 1</color>
             </emission>
             <diffuse>
-              <color sid="diffuse">0.8 0.8 0.8 1</color>
+              <texture texture="bass_png-sampler" texcoord="UVMap"/>
             </diffuse>
             <reflectivity>
               <float sid="specular">1</float>
@@ -219,7 +229,11 @@
       </profile_COMMON>
     </effect>
   </library_effects>
-  <library_images/>
+  <library_images>
+    <image id="bass_png" name="bass_png">
+      <init_from>bass.png</init_from>
+    </image>
+  </library_images>
   <library_materials>
     <material id="Material_001-material" name="Material.001">
       <instance_effect url="#Material_001-effect"/>
