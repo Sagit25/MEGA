@@ -56,6 +56,7 @@ public:
 	
 	inline float GetTicksPerSecond() { return m_TicksPerSecond; }
 	inline float GetDuration() { return m_Duration;}
+	inline void SetDuration(float duration) { m_Duration = duration; }
 	inline const AssimpNodeData& GetRootNode() { return m_RootNode; }
 	inline const std::map<std::string,BoneInfo>& GetBoneIDMap() 
 	{ 

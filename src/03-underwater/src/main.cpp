@@ -20,6 +20,8 @@
 #include "math_utils.h"
 #include "light.h"
 #include "model_animation.h"
+#include "animation.h"
+#include "animator.h"
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
@@ -221,16 +223,18 @@ int main()
     // (1) diffuse, specular, normal : brickCubeModel
     // (2) diffuse, normal only : boulderModel
     // (3) diffuse only : grassGroundModel
-    AnimationModel sharkModel = AnimationModel("../resources/fish/shark/shark.dae", false, false);
     AnimationModel bassModel = AnimationModel("../resources/fish/bass/bass.dae", false, false);
+    Animation bassAnimation("../resources/fish/bass/bass.dae", &bassModel);
+	Animator bassAnimator(&bassAnimation);
+    bassAnimation.SetDuration(1670.0);
 
     // Add entities to scene.
     // you can change the position/orientation.
     Scene scene;
-    scene.addEntity(new Entity(&sharkModel, glm::mat4(1.0)));
-    scene.addEntity(new Entity(&sharkModel, glm::translate(glm::vec3(-3.5f, 0.0f, -2.0f)) * glm::rotate(glm::radians(45.0f), glm::vec3(1.0f, 0.0f, 0.0f))));
-    scene.addEntity(new Entity(&sharkModel, glm::translate(glm::vec3(1.0f, 0.5f, -3.0f)) * glm::rotate(glm::radians(45.0f), glm::vec3(0.0f, 0.0f, 1.0f))));
-    scene.addEntity(new Entity(&bassModel, glm::mat4(1.0)));
+    // scene.addEntity(new Entity(&sharkModel, glm::mat4(1.0)));
+    //scene.addEntity(new Entity(&sharkModel, glm::translate(glm::vec3(-3.5f, 0.0f, -2.0f)) * glm::rotate(glm::radians(45.0f), glm::vec3(1.0f, 0.0f, 0.0f))));
+    //scene.addEntity(new Entity(&sharkModel, glm::translate(glm::vec3(1.0f, 0.5f, -3.0f)) * glm::rotate(glm::radians(45.0f), glm::vec3(0.0f, 0.0f, 1.0f))));
+    scene.addEntity(new Entity(&bassModel, glm::rotate(glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f))));
 
 
     // define depth texture
@@ -303,6 +307,8 @@ int main()
 
         // input
         processInput(window, &sun);
+        bassAnimator.UpdateAnimation(2*deltaTime);
+
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         
@@ -420,6 +426,10 @@ int main()
         {
             lightingShader.setFloat("cascadePlaneDistances[" + std::to_string(i) + "]", shadowCascadeLevels[i]);
         }
+
+        auto transforms = bassAnimator.GetFinalBoneMatrices();
+		for (int i = 0; i < transforms.size(); ++i)
+			lightingShader.setMat4("finalBonesMatrices[" + std::to_string(i) + "]", transforms[i]);
 
         // Iterate using map<Model*, vector<Entity*>>::iterator it = scene.entities.begin()
         for(map<Model*, vector<Entity*>>::iterator it = scene.entities.begin(); it != scene.entities.end(); it++) {

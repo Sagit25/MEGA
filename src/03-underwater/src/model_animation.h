@@ -147,7 +147,6 @@ protected:
         }
 
         SubMesh subMesh;
-        subMesh.mesh = Mesh(vertices, indices);
 
         // mtl file based load texture
         if(mesh->mMaterialIndex >= 0) {
@@ -178,7 +177,8 @@ protected:
         }
 
 		ExtractBoneWeightForVertices(vertices, mesh, scene);
-
+        
+        subMesh.mesh = Mesh(vertices, indices);
         return subMesh;
     }
 };

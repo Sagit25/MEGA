@@ -40,7 +40,7 @@ public:
 protected:
     void loadModel(std::string const &path, bool uvFlip = true) {
         Assimp::Importer importer;
-        unsigned int postProcessFlags = aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_CalcTangentSpace;
+        unsigned int postProcessFlags = aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_CalcTangentSpace | aiProcess_LimitBoneWeights;
         if (uvFlip) {
             postProcessFlags |= aiProcess_FlipUVs;
         }
