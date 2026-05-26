@@ -22,6 +22,7 @@
 #include "model_animation.h"
 #include "animation.h"
 #include "animator.h"
+#include "spline_path.h"
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
@@ -241,11 +242,21 @@ int main()
     // Add entities to scene.
     // you can change the position/orientation.
     Scene scene;
-    scene.addEntity(new Entity(&sharkModel, glm::mat4(1.0)));
+    std::vector<SplinePath*> splinePaths;
+
+    Entity* sharkEntity = new Entity(&sharkModel, glm::mat4(1.0f));
+    scene.addEntity(sharkEntity);
+    sharkEntity->splinePath = new SplinePath(sharkModel.radius, splinePaths);
+    splinePaths.push_back(sharkEntity->splinePath);
+
     //scene.addEntity(new Entity(&sharkModel, glm::translate(glm::vec3(-3.5f, 0.0f, -2.0f)) * glm::scale(glm::vec3(2.0f))));
     //scene.addEntity(new Entity(&sharkModel, glm::translate(glm::vec3(1.0f, 0.5f, -3.0f)) * glm::rotate(glm::radians(45.0f), glm::vec3(0.0f, 0.0f, 1.0f))));
     // scene.addEntity(new Entity(&bassModel, glm::rotate(glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f))));
-    scene.addEntity(new Entity(&bassModel, glm::rotate(glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f)) * glm::scale(glm::vec3(2.0f))));
+    Entity* bassEntity = new Entity(&bassModel, glm::rotate(glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f)) * glm::rotate(glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f)) * glm::scale(glm::vec3(1.0f)));
+    scene.addEntity(bassEntity);
+    bassEntity->splinePath = new SplinePath(bassModel.radius, splinePaths);
+    splinePaths.push_back(bassEntity->splinePath);
+
     scene.addEntity(new Entity(&shellModel, glm::translate(glm::vec3(3.0f, 0.0f, 3.0f))));
     for (int i = 0; i < 4; i++) {
         for(int j = 0; j < 4; j++) {
@@ -325,6 +336,10 @@ int main()
         processInput(window, &sun);
         bassAnimator.UpdateAnimation(2*deltaTime);
         sharkAnimator.UpdateAnimation(deltaTime);
+
+        for (auto splinePath: splinePaths) {
+            splinePath->advance(deltaTime, splinePaths);
+        }
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -459,6 +474,9 @@ int main()
 
             for(Entity* entity : it->second) {
                 glm::mat4 modelMatrix = entity->getModelMatrix();
+                if (entity->splinePath) {
+                    modelMatrix = entity->splinePath->calculateBSpline() * modelMatrix;
+                }
                 lightingShader.setMat4("world", modelMatrix);
 
                 for (const SubMesh& subMesh : model->subMeshes) {

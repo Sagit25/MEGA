@@ -37,10 +37,12 @@ class AnimationModel : public Model
 {
 public:
     Animator* animator;
+    float radius = 0.0f;
 
     AnimationModel(const char* filePath, bool ignoreShadow = false, bool uvFlip = true)
     {
         loadModel(filePath, uvFlip);
+        setRadius();
     }
 
     std::map<string, BoneInfo>& GetBoneInfoMap() { return m_BoneInfoMap; }
@@ -52,6 +54,24 @@ protected:
 
 	std::map<string, BoneInfo> m_BoneInfoMap;
 	int m_BoneCounter = 0;
+    
+    glm::vec3 minPos = glm::vec3(+1000000.0f);
+    glm::vec3 maxPos = glm::vec3(-1000000.0f);
+
+    void addPos(glm::vec3 position) {
+        minPos.x = std::min(minPos.x, position.x);
+        minPos.y = std::min(minPos.y, position.y);
+        minPos.z = std::min(minPos.z, position.z);
+
+        maxPos.x = std::max(maxPos.x, position.x);
+        maxPos.y = std::max(maxPos.y, position.y);
+        maxPos.z = std::max(maxPos.z, position.z);
+    }
+
+    void setRadius() {
+        glm::vec3 halfSize = (maxPos - minPos) * 0.5f;
+        radius = std::max(halfSize.y, halfSize.z);
+    }
 
 	void SetVertexBoneDataToDefault(Vertex& vertex)
 	{
@@ -139,6 +159,7 @@ protected:
             vector.y = mesh->mVertices[i].y;
             vector.z = mesh->mVertices[i].z;
             vertex.Position = vector;
+            addPos(vector);
 
             if (mesh->HasNormals()) {
                 vector.x = mesh->mNormals[i].x;
