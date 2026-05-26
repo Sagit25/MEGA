@@ -226,14 +226,21 @@ int main()
     AnimationModel bassModel = AnimationModel("../resources/fish/bass/bass.dae", false, false);
     Animation bassAnimation("../resources/fish/bass/bass.dae", &bassModel);
 	Animator bassAnimator(&bassAnimation);
+    bassModel.animator = &bassAnimator;
     bassAnimation.SetDuration(1670.0);
+
+    AnimationModel sharkModel = AnimationModel("../resources/fish/shark/shark.dae", false, false);
+    Animation sharkAnimation("../resources/fish/shark/shark.dae", &sharkModel);
+	Animator sharkAnimator(&sharkAnimation);
+    sharkModel.animator = &sharkAnimator;
 
     // Add entities to scene.
     // you can change the position/orientation.
     Scene scene;
     // scene.addEntity(new Entity(&sharkModel, glm::mat4(1.0)));
-    //scene.addEntity(new Entity(&sharkModel, glm::translate(glm::vec3(-3.5f, 0.0f, -2.0f)) * glm::rotate(glm::radians(45.0f), glm::vec3(1.0f, 0.0f, 0.0f))));
+    scene.addEntity(new Entity(&sharkModel, glm::translate(glm::vec3(-3.5f, 0.0f, -2.0f))));
     //scene.addEntity(new Entity(&sharkModel, glm::translate(glm::vec3(1.0f, 0.5f, -3.0f)) * glm::rotate(glm::radians(45.0f), glm::vec3(0.0f, 0.0f, 1.0f))));
+    // scene.addEntity(new Entity(&bassModel, glm::rotate(glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f))));
     scene.addEntity(new Entity(&bassModel, glm::rotate(glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f))));
 
 
@@ -308,6 +315,7 @@ int main()
         // input
         processInput(window, &sun);
         bassAnimator.UpdateAnimation(2*deltaTime);
+        sharkAnimator.UpdateAnimation(deltaTime);
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -427,14 +435,18 @@ int main()
             lightingShader.setFloat("cascadePlaneDistances[" + std::to_string(i) + "]", shadowCascadeLevels[i]);
         }
 
-        auto transforms = bassAnimator.GetFinalBoneMatrices();
-		for (int i = 0; i < transforms.size(); ++i)
-			lightingShader.setMat4("finalBonesMatrices[" + std::to_string(i) + "]", transforms[i]);
-
         // Iterate using map<Model*, vector<Entity*>>::iterator it = scene.entities.begin()
         for(map<Model*, vector<Entity*>>::iterator it = scene.entities.begin(); it != scene.entities.end(); it++) {
             Model* model = it->first;
             if (!model) continue;
+            
+            if (model->IsAnimated()) {
+                Animator *animator = dynamic_cast<AnimationModel*>(model)->animator;
+                auto transforms = animator->GetFinalBoneMatrices();
+                for (int i = 0; i < transforms.size(); ++i) {
+                    lightingShader.setMat4("finalBonesMatrices[" + std::to_string(i) + "]", transforms[i]);
+                }
+            }
 
             for(Entity* entity : it->second) {
                 glm::mat4 modelMatrix = entity->getModelMatrix();

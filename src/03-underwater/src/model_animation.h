@@ -23,6 +23,8 @@
 
 using namespace std;
 
+class Animator;
+
 struct BoneInfo
 {
 	// index in finalBoneMatrices
@@ -34,6 +36,7 @@ struct BoneInfo
 class AnimationModel : public Model
 {
 public:
+    Animator* animator;
 
     AnimationModel(const char* filePath, bool ignoreShadow = false, bool uvFlip = true)
     {
@@ -42,6 +45,8 @@ public:
 
     std::map<string, BoneInfo>& GetBoneInfoMap() { return m_BoneInfoMap; }
 	int& GetBoneCount() { return m_BoneCounter; }
+
+    virtual bool IsAnimated() const override { return true; }
 
 protected:
 
@@ -106,8 +111,21 @@ protected:
 		}
 	}
 
+    virtual void processNode(aiNode *node, const aiScene *scene) override {
+        if (std::string(node->mName.C_Str()) == "Sharkjaw") {
+            return;
+        }
+        for(unsigned int i = 0; i < node->mNumMeshes; i++) {
+            aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
+            subMeshes.push_back(processMesh(mesh, scene));
+        }
+        for(unsigned int i = 0; i < node->mNumChildren; i++) {
+            processNode(node->mChildren[i], scene);
+        }
+    }
+
 	// Submech processing (virtual for child class)
-    virtual SubMesh processMesh(aiMesh *mesh, const aiScene *scene) {
+    virtual SubMesh processMesh(aiMesh *mesh, const aiScene *scene) override {
         std::vector<Vertex> vertices;
         std::vector<unsigned int> indices;
 

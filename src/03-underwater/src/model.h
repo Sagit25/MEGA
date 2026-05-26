@@ -36,6 +36,8 @@ public:
         loadModel(filePath, uvFlip);
     }
 
+    virtual bool IsAnimated() const { return false; }
+
 // protected for child class
 protected:
     void loadModel(std::string const &path, bool uvFlip = true) {
@@ -55,7 +57,7 @@ protected:
         processNode(scene->mRootNode, scene);
     }
 
-    void processNode(aiNode *node, const aiScene *scene) {
+    virtual void processNode(aiNode *node, const aiScene *scene) {
         for(unsigned int i = 0; i < node->mNumMeshes; i++) {
             aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
             subMeshes.push_back(processMesh(mesh, scene));
