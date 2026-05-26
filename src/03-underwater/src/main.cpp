@@ -236,6 +236,8 @@ int main()
 
     Model shellModel = Model("../resources/seashell/seashell1/seashell1.obj");
 
+    Model floorModel = Model("../resources/floor/floor.obj", true);
+
     // Add entities to scene.
     // you can change the position/orientation.
     Scene scene;
@@ -245,6 +247,11 @@ int main()
     // scene.addEntity(new Entity(&bassModel, glm::rotate(glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f))));
     scene.addEntity(new Entity(&bassModel, glm::rotate(glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f)) * glm::scale(glm::vec3(2.0f))));
     scene.addEntity(new Entity(&shellModel, glm::translate(glm::vec3(3.0f, 0.0f, 3.0f))));
+    for (int i = 0; i < 4; i++) {
+        for(int j = 0; j < 4; j++) {
+            scene.addEntity(new Entity(&floorModel, glm::translate(glm::vec3(i * 20.0f, -3.0f, j * -20.0f)) * glm::scale(glm::vec3(20.0f))));
+        }
+    }
 
     // define depth texture
     DepthMapTexture depth = DepthMapTexture(SHADOW_WIDTH, SHADOW_HEIGHT);
