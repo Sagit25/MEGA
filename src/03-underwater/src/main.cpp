@@ -234,15 +234,17 @@ int main()
 	Animator sharkAnimator(&sharkAnimation);
     sharkModel.animator = &sharkAnimator;
 
+    Model shellModel = Model("../resources/seashell/seashell1/seashell1.obj");
+
     // Add entities to scene.
     // you can change the position/orientation.
     Scene scene;
-    // scene.addEntity(new Entity(&sharkModel, glm::mat4(1.0)));
-    scene.addEntity(new Entity(&sharkModel, glm::translate(glm::vec3(-3.5f, 0.0f, -2.0f))));
+    scene.addEntity(new Entity(&sharkModel, glm::mat4(1.0)));
+    //scene.addEntity(new Entity(&sharkModel, glm::translate(glm::vec3(-3.5f, 0.0f, -2.0f)) * glm::scale(glm::vec3(2.0f))));
     //scene.addEntity(new Entity(&sharkModel, glm::translate(glm::vec3(1.0f, 0.5f, -3.0f)) * glm::rotate(glm::radians(45.0f), glm::vec3(0.0f, 0.0f, 1.0f))));
     // scene.addEntity(new Entity(&bassModel, glm::rotate(glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f))));
-    scene.addEntity(new Entity(&bassModel, glm::rotate(glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f))));
-
+    scene.addEntity(new Entity(&bassModel, glm::rotate(glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f)) * glm::scale(glm::vec3(2.0f))));
+    scene.addEntity(new Entity(&shellModel, glm::translate(glm::vec3(3.0f, 0.0f, 3.0f))));
 
     // define depth texture
     DepthMapTexture depth = DepthMapTexture(SHADOW_WIDTH, SHADOW_HEIGHT);

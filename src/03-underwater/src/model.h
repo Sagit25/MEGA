@@ -73,7 +73,7 @@ protected:
         std::vector<unsigned int> indices;
 
         for(unsigned int i = 0; i < mesh->mNumVertices; i++) {
-            Vertex vertex;
+            Vertex vertex = {};
             glm::vec3 vector;
             
             vector.x = mesh->mVertices[i].x;
@@ -86,6 +86,15 @@ protected:
                 vector.y = mesh->mNormals[i].y;
                 vector.z = mesh->mNormals[i].z;
                 vertex.Normal = vector;
+            }
+
+            if (mesh->HasTangentsAndBitangents()) {
+                vector.x = mesh->mTangents[i].x;
+                vector.y = mesh->mTangents[i].y;
+                vector.z = mesh->mTangents[i].z;
+                vertex.Tangent = vector;
+            } else {
+                vertex.Tangent = glm::vec3(1.0f, 0.0f, 0.0f);
             }
 
             if(mesh->mTextureCoords[0]) {

@@ -1,0 +1,15 @@
+# Blender MTL File: 'seashell_rapan.blend'
+# Material Count: 1
+
+newmtl seashell_rapan
+Ns 0.000000
+Ka 1.000000 1.000000 1.000000
+Kd 0.800000 0.800000 0.800000
+Ks 0.301282 0.301282 0.301282
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Bump seashell1_n.png
+map_Kd seashell1_d.png
+map_Ks seashell1_s.png
