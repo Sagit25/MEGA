@@ -26,12 +26,18 @@ public:
         : p0(p0), p1(p1), p2(p2), p3(p3), r(r)
     {}
 
+    /* Set unoverlapping spline path */
     SplinePath(float r, std::vector<SplinePath*>& splinePaths)
         : r(r)
     {
         randomize(splinePaths);
     }
 
+    /*
+     * Renew state of spline path
+     * 1. Update speed of model
+     * 2. If current spline path ends, add new control point to the end
+     */
     void advance(float dt, std::vector<SplinePath*>& splinePaths) {
         updateSpeed(dt);
         t += v * dt;
@@ -48,6 +54,11 @@ public:
         }
     }
 
+    /*
+     * Return translation * rotation matrix
+     * translation: move model position(base (0,0,0)) to spline pos
+     * rotation: move model front(base (0,0,-1)) to spline direction
+     */
     glm::mat4 calculateBSpline() {
         std::pair<glm::vec3, glm::vec3> spline = calculateBSplineAt(t);
         glm::vec3 pos = spline.first;
@@ -63,22 +74,29 @@ public:
         return translation * rotation;
     }
 
+    /* Check if current spline doesn't overlap with splinePaths */
     bool isAvailable(std::vector<SplinePath*>& splinePaths) {
         return isAvailableExcept(splinePaths, nullptr);
     }
 
 private:
-    const float minSpeed = 0.2f;
-    const float maxSpeed = 0.4f;
+    const float minSpeed = 0.6f;
+    const float maxSpeed = 1.2f;
     const float speedChangeTime = 1.0f;
     const float minSpeedStayTime = 1.0f;
     const float maxSpeedStayTime = 4.0f;
-    const float turnCos = 0.707f;
-    const float minTurnChance = 0.05f;
-    const float minCPDist = 3.0f;
+    const float turnCos = cos(glm::radians(45.0f));
+    const float minTurnChance = 0.01f;
+    const float cpDist = 15.0f;
+    const float xMin = -10.0f;
+    const float xMax = 50.0f;
+    const float yMin = 10.0f;
+    const float yMax = 40.0f;
+    const float zMin = -50.0f;
+    const float zMax = 10.0f;
 
-    float startSpeed = 0.2f;
-    float targetSpeed = 0.2f;
+    float startSpeed = 0.8f;
+    float targetSpeed = 0.8f;
 
     float speedChangeTimer = 1.0f;
     float speedStayTimer = 0.0f;
@@ -86,26 +104,78 @@ private:
 
     const int overlapSampleCount = 16;
 
+
+    /* Random control point in given cube */
     glm::vec3 randomCP() {
         return glm::vec3(
-            glm::linearRand(10.0f, 50.0f),
-            glm::linearRand(-3.0f, 10.0f),
-            glm::linearRand(-50.0f, -10.0f));
+            glm::linearRand(xMin, xMax),
+            glm::linearRand(yMin, yMax),
+            glm::linearRand(zMin, zMax));
     }
 
-    void randomize(std::vector<SplinePath*>& splinePaths) {
-        for (int i = 0; i < 30; i++) {
-            p0 = randomCP();
-            p1 = randomCP();
-            p2 = randomCP();
-            p3 = randomCP();
+    /* Is the point is in the bound? */
+    bool boundOK(glm::vec3 p) {
+        return p.x >= xMin && p.x <= xMax
+            && p.y >= yMin && p.y <= yMax
+            && p.z >= zMin && p.z <= zMax;
+    }
 
-            if (cpOK() && isAvailable(splinePaths)) {
+    /* 
+     * Check if the direction is OK
+     * If direction diff is within the fixed angle, it's ok
+     * Else if direction is opposite, it's bad
+     * Else, pass with low probability
+     */
+    bool turnOK(glm::vec3 prevCP, glm::vec3 currentCP, glm::vec3 nextCP) {
+        glm::vec3 oldDir = currentCP - prevCP;
+        glm::vec3 newDir = nextCP - currentCP;
+
+        if (glm::length(oldDir) < 0.001f || glm::length(newDir) < 0.001f) {
+            return true;
+        }
+
+        oldDir = glm::normalize(oldDir);
+        newDir = glm::normalize(newDir);
+
+        float dotDir = glm::clamp(glm::dot(oldDir, newDir), -1.0f, 1.0f);
+        if (dotDir >= turnCos) {
+            return true;
+        }
+        if (dotDir <= -turnCos) {
+            return false;
+        }
+
+        return glm::linearRand(0.0f, 1.0f) <= minTurnChance;
+    }
+
+    /* Set the first 4 control points */
+    void randomize(std::vector<SplinePath*>& splinePaths) {
+        for (int i = 0; i < 100; i++) {
+            p0 = randomCP();
+            p1 = p0 + glm::sphericalRand(cpDist);
+            p2 = p1 + glm::sphericalRand(cpDist);
+            p3 = p2 + glm::sphericalRand(cpDist);
+
+            if (!boundOK(p1) || !boundOK(p2) || !boundOK(p3)) {
+                continue;
+            }
+
+            if (!turnOK(p0, p1, p2) || !turnOK(p1, p2, p3)) {
+                continue;
+            }
+
+            if (isAvailable(splinePaths)) {
                 return;
             }
         }
     }
 
+    /*
+     * Update speed
+     * speed change in smooth function from startSpeed to targetSpeed
+     * if speed reaches targetSpeed, it stays some random time
+     * then choose random next targetSpeed
+     */
     void updateSpeed(float dt) {
         if (speedChangeTimer < speedChangeTime) {
             speedChangeTimer += dt;
@@ -126,6 +196,26 @@ private:
         }
     }
 
+    float reflectCoord(float from, float value, float minValue, float maxValue) {
+        if (value < minValue || value > maxValue) {
+            value = 2.0f * from - value;
+        }
+
+        return value;
+    }
+
+    /*
+     * If "p" doesn't within the bound, reflect against "from"
+     * check with each axis
+     */
+    glm::vec3 fitBound(glm::vec3 from, glm::vec3 p) {
+        p.x = reflectCoord(from.x, p.x, xMin, xMax);
+        p.y = reflectCoord(from.y, p.y, yMin, yMax);
+        p.z = reflectCoord(from.z, p.z, zMin, zMax);
+        return p;
+    }
+
+    /* Returns b-spline pos/dir */
     std::pair<glm::vec3, glm::vec3> calculateBSplineAt(float pathT) {
         float t2 = pathT * pathT;
         float t3 = t2 * pathT;
@@ -152,75 +242,12 @@ private:
         return std::make_pair(pos, dir);
     }
 
-    bool tryNextCP(
-        std::vector<SplinePath*>& splinePaths,
-        glm::vec3& nextCP)
-    {
-        for (int i = 0; i < 30; i++) {
-            nextCP = randomCP();
-            if (!turnOK(nextCP)) {
-                continue;
-            }
-
-            SplinePath candidate(p1, p2, p3, nextCP, r);
-
-            if (candidate.cpOK() && candidate.isAvailableExcept(splinePaths, this)) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    bool cpOK() {
-        glm::vec3 d01 = p0 - p1;
-        glm::vec3 d12 = p1 - p2;
-        glm::vec3 d23 = p2 - p3;
-
-        return glm::dot(d01, d01) >= minCPDist * minCPDist
-            && glm::dot(d12, d12) >= minCPDist * minCPDist
-            && glm::dot(d23, d23) >= minCPDist * minCPDist;
-    }
-
-    bool turnOK(glm::vec3& nextCP) {
-        glm::vec3 oldDir = p2 - p1;
-        glm::vec3 newDir = nextCP - p3;
-
-        if (glm::length(oldDir) < 0.001f || glm::length(newDir) < 0.001f) {
-            return true;
-        }
-
-        oldDir = glm::normalize(oldDir);
-        newDir = glm::normalize(newDir);
-
-        float dotDir = glm::clamp(glm::dot(oldDir, newDir), -1.0f, 1.0f);
-        if (dotDir >= turnCos) {
-            return true;
-        }
-        if (dotDir <= -turnCos) {
-            return false;
-        }
-
-        return (glm::linearRand(0.0f, 1.0f) <= minTurnChance);
-    }
-
-    bool isAvailableExcept(
-        std::vector<SplinePath*>& splinePaths,
-        SplinePath* ignoredSplinePath)
-    {
-        for (SplinePath* splinePath : splinePaths) {
-            if (!splinePath || splinePath == ignoredSplinePath) {
-                continue;
-            }
-
-            if (isOverlapping(*splinePath)) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
+    /*
+     * Check overlap between two spline paths
+     * one path overlaps other when a segment of it
+     * is within the other path's radius
+     * approximate checking with sampling
+     */
     bool isOverlapping(SplinePath& other) {
         const float radiusSum = r + other.r;
 
@@ -242,6 +269,57 @@ private:
         return false;
     }
 
+    /*
+     * Check overlap with other paths
+     * ignoredSplinePath parameter for avoiding self-overlap
+     */
+    bool isAvailableExcept(
+        std::vector<SplinePath*>& splinePaths,
+        SplinePath* ignoredSplinePath)
+    {
+        for (SplinePath* splinePath : splinePaths) {
+            if (!splinePath || splinePath == ignoredSplinePath) {
+                continue;
+            }
+
+            if (isOverlapping(*splinePath)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /*
+     * Find next control point
+     * return immediately when find valid control point
+     * after 100 tries, just retrun with last candidate
+     */
+    bool tryNextCP(
+        std::vector<SplinePath*>& splinePaths,
+        glm::vec3& nextCP)
+    {
+        for (int i = 0; i < 100; i++) {
+            nextCP = p3 + glm::sphericalRand(cpDist);
+
+            if (!turnOK(p2, p3, nextCP)) {
+                continue;
+            }
+
+            nextCP = fitBound(p3, nextCP);
+            SplinePath candidate(p1, p2, p3, nextCP, r);
+
+            if (candidate.isAvailableExcept(splinePaths, this)) {
+                std::cout << nextCP.x << ' ' << nextCP.y << ' ' << nextCP.z << std::endl;
+                return true;
+            }
+        }
+
+        nextCP = fitBound(p3, nextCP);
+        return true;
+    }
+
+    /* Discard old control point and accept new one */
     void shiftCP(glm::vec3& nextCP) {
         p0 = p1;
         p1 = p2;

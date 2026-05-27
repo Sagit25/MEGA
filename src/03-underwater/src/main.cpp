@@ -252,7 +252,7 @@ int main()
     //scene.addEntity(new Entity(&sharkModel, glm::translate(glm::vec3(-3.5f, 0.0f, -2.0f)) * glm::scale(glm::vec3(2.0f))));
     //scene.addEntity(new Entity(&sharkModel, glm::translate(glm::vec3(1.0f, 0.5f, -3.0f)) * glm::rotate(glm::radians(45.0f), glm::vec3(0.0f, 0.0f, 1.0f))));
     // scene.addEntity(new Entity(&bassModel, glm::rotate(glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f))));
-    Entity* bassEntity = new Entity(&bassModel, glm::rotate(glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f)) * glm::rotate(glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f)) * glm::scale(glm::vec3(1.0f)));
+    Entity* bassEntity = new Entity(&bassModel, glm::rotate(glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f)) * glm::rotate(glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f)));
     scene.addEntity(bassEntity);
     bassEntity->splinePath = new SplinePath(bassModel.radius, splinePaths);
     splinePaths.push_back(bassEntity->splinePath);
