@@ -9,9 +9,9 @@
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 
-#include "model.h"
-#include "mesh.h"
-#include "shader.h"
+#include "../model.h"
+#include "../mesh.h"
+#include "../shader.h"
 #include "assimp_glm_helpers.h"
 
 #include <string>

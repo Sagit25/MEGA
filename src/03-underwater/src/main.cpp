@@ -19,11 +19,11 @@
 #include "scene.h"
 #include "math_utils.h"
 #include "light.h"
-#include "model_animation.h"
-#include "animation.h"
-#include "animator.h"
-// #include "spline_path.h"
-#include "boid.h"
+#include "animation/model_animation.h"
+#include "animation/animation.h"
+#include "animation/animator.h"
+// #include "animation/spline_path.h"
+#include "animation/boid.h"
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);

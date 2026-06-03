@@ -7,6 +7,7 @@ set(PROJECT_ORIGIN "../../")
 
 file(GLOB SOURCE
     "src/*.h"
+    "src/animation/*.h"
     "src/*.cpp"
 )
 
