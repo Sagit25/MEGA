@@ -12,6 +12,8 @@
 #include "animation.h"
 #include "bone.h"
 
+using namespace std;
+
 class Animator
 {
 public:
@@ -32,20 +34,27 @@ public:
 		if (m_CurrentAnimation)
 		{
 			m_CurrentTime += m_CurrentAnimation->GetTicksPerSecond() * dt;
-			m_CurrentTime = std::fmod(m_CurrentTime, m_CurrentAnimation->GetDuration());
+			m_CurrentTime = fmod(m_CurrentTime, m_CurrentAnimation->GetDuration());
 			CalculateBoneTransform(&m_CurrentAnimation->GetRootNode(), glm::mat4(1.0f));
 		}
 	}
 
-	std::vector<glm::mat4> GetFinalBoneMatrices()
+	vector<glm::mat4> GetFinalBoneMatrices()
 	{
 		return m_FinalBoneMatrices;
 	}
 
 private:
+
+	vector<glm::mat4> m_FinalBoneMatrices;
+	Animation* m_CurrentAnimation;
+	float m_CurrentTime;
+	float m_DeltaTime;
+
+	// update bone transform and calculate finalBoneMatrices
 	void CalculateBoneTransform(const AssimpNodeData* node, glm::mat4 parentTransform)
 	{
-		std::string nodeName = node->name;
+		string nodeName = node->name;
 		glm::mat4 nodeTransform = node->transformation;
 
 		Bone* Bone = m_CurrentAnimation->FindBone(nodeName);
@@ -66,15 +75,10 @@ private:
 			m_FinalBoneMatrices[index] = globalTransformation * offset;
 		}
 
+		// recursively apply to children
 		for (int i = 0; i < node->childrenCount; i++)
 			CalculateBoneTransform(&node->children[i], globalTransformation);
 	}
-
-	std::vector<glm::mat4> m_FinalBoneMatrices;
-	Animation* m_CurrentAnimation;
-	float m_CurrentTime;
-	float m_DeltaTime;
-
 };
 
 #endif

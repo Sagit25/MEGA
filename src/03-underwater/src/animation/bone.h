@@ -18,6 +18,8 @@
 
 #include "assimp_glm_helpers.h"
 
+using namespace std;
+
 struct KeyPosition
 {
 	glm::vec3 position;
@@ -39,14 +41,13 @@ struct KeyScale
 class Bone
 {
 public:
-	Bone(const std::string& name, int ID, const aiNodeAnim* channel)
+	Bone(const string& name, int ID, const aiNodeAnim* channel)
 		:
 		m_Name(name),
 		m_ID(ID),
 		m_LocalTransform(1.0f)
 	{
 		m_NumPositions = channel->mNumPositionKeys;
-
 		for (int positionIndex = 0; positionIndex < m_NumPositions; ++positionIndex)
 		{
 			aiVector3D aiPosition = channel->mPositionKeys[positionIndex].mValue;
@@ -80,6 +81,10 @@ public:
 		}
 	}
 	
+	/*
+	 * update bone transformation matrix
+	 * find nearest two frames and interpolate between them
+	 */
 	void Update(float animationTime)
 	{
 		glm::mat4 translation = InterpolatePosition(animationTime);
@@ -88,9 +93,21 @@ public:
 		m_LocalTransform = translation * rotation * scale;
 	}
 	glm::mat4 GetLocalTransform() { return m_LocalTransform; }
-	std::string GetBoneName() const { return m_Name; }
+	string GetBoneName() const { return m_Name; }
 
 private:
+
+	vector<KeyPosition> m_Positions;
+	vector<KeyRotation> m_Rotations;
+	vector<KeyScale> m_Scales;
+	int m_NumPositions;
+	int m_NumRotations;
+	int m_NumScalings;
+
+	glm::mat4 m_LocalTransform;
+	string m_Name;
+	int m_ID;
+
 	int GetPositionIndex(float animationTime)
 	{
 		for (int index = 0; index < m_NumPositions - 1; ++index)
@@ -160,7 +177,6 @@ private:
 			, scaleFactor);
 		finalRotation = glm::normalize(finalRotation);
 		return glm::toMat4(finalRotation);
-
 	}
 
 	glm::mat4 InterpolateScaling(float animationTime)
@@ -176,17 +192,6 @@ private:
 			, scaleFactor);
 		return glm::scale(glm::mat4(1.0f), finalScale);
 	}
-
-	std::vector<KeyPosition> m_Positions;
-	std::vector<KeyRotation> m_Rotations;
-	std::vector<KeyScale> m_Scales;
-	int m_NumPositions;
-	int m_NumRotations;
-	int m_NumScalings;
-
-	glm::mat4 m_LocalTransform;
-	std::string m_Name;
-	int m_ID;
 };
 
 #endif

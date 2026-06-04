@@ -18,41 +18,39 @@
 #include "bone.h"
 #include "bone_info.h"
 
+using namespace std;
+
+// custom aiNode structure for independent handling
 struct AssimpNodeData
 {
+	string name;
 	glm::mat4 transformation;
-	std::string name;
 	int childrenCount;
-	std::vector<AssimpNodeData> children;
+	vector<AssimpNodeData> children;
 };
 
 class Animation
 {
 public:
-	Animation() = default;
 
 	template <typename AnimationModelType>
-	Animation(const std::string& animationPath, AnimationModelType* model)
+	Animation(const string& animationPath, AnimationModelType* model)
 	{
 		Assimp::Importer importer;
 		const aiScene* scene = importer.ReadFile(animationPath, aiProcess_Triangulate);
 		assert(scene && scene->mRootNode);
+
 		auto animation = scene->mAnimations[0];
 		m_Duration = animation->mDuration;
 		m_TicksPerSecond = animation->mTicksPerSecond;
-		aiMatrix4x4 globalTransformation = scene->mRootNode->mTransformation;
-		globalTransformation = globalTransformation.Inverse();
+		
 		ReadHierarchyData(m_RootNode, scene->mRootNode);
 		ReadMissingBones(animation, *model);
 	}
 
-	~Animation()
+	Bone* FindBone(const string& name)
 	{
-	}
-
-	Bone* FindBone(const std::string& name)
-	{
-		auto iter = std::find_if(m_Bones.begin(), m_Bones.end(),
+		auto iter = find_if(m_Bones.begin(), m_Bones.end(),
 			[&](const Bone& Bone)
 			{
 				return Bone.GetBoneName() == name;
@@ -62,17 +60,20 @@ public:
 		else return &(*iter);
 	}
 
-	
 	inline float GetTicksPerSecond() { return m_TicksPerSecond; }
 	inline float GetDuration() { return m_Duration;}
 	inline void SetDuration(float duration) { m_Duration = duration; }
 	inline const AssimpNodeData& GetRootNode() { return m_RootNode; }
-	inline const std::map<std::string,BoneInfo>& GetBoneIDMap() 
-	{ 
-		return m_BoneInfoMap;
-	}
+	inline const map<string, BoneInfo>& GetBoneIDMap() { return m_BoneInfoMap; }
 
 private:
+	float m_Duration;
+	int m_TicksPerSecond;
+	vector<Bone> m_Bones;
+	AssimpNodeData m_RootNode;
+	map<string, BoneInfo> m_BoneInfoMap;
+
+	// complete boneinfo map + setup bone animation datas
 	template <typename AnimationModelType>
 	void ReadMissingBones(const aiAnimation* animation, AnimationModelType& model)
 	{
@@ -84,7 +85,7 @@ private:
 		for (int i = 0; i < size; i++)
 		{
 			auto channel = animation->mChannels[i];
-			std::string boneName = channel->mNodeName.data;
+			string boneName = channel->mNodeName.data;
 
 			if (boneInfoMap.find(boneName) == boneInfoMap.end())
 			{
@@ -98,6 +99,7 @@ private:
 		m_BoneInfoMap = boneInfoMap;
 	}
 
+	// copy assimp scene hierarchy to custom data
 	void ReadHierarchyData(AssimpNodeData& dest, const aiNode* src)
 	{
 		assert(src);
@@ -113,11 +115,6 @@ private:
 			dest.children.push_back(newData);
 		}
 	}
-	float m_Duration;
-	int m_TicksPerSecond;
-	std::vector<Bone> m_Bones;
-	AssimpNodeData m_RootNode;
-	std::map<std::string, BoneInfo> m_BoneInfoMap;
 };
 
 #endif

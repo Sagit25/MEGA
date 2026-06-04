@@ -8,6 +8,8 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/random.hpp>
 
+using namespace std;
+
 class Boid {
 public:
     glm::vec3 position;
@@ -16,13 +18,13 @@ public:
     float r = 0.5f;
     float len = 1.0f;
 
-    Boid(float r, float len, std::vector<Boid*>& boids)
+    Boid(float r, float len, vector<Boid*>& boids)
         : r(r), len(len)
     {
         randomize(boids);
     }
 
-    void advance(float dt, std::vector<Boid*>& boids) {
+    void advance(float dt, vector<Boid*>& boids) {
         glm::vec3 force = glm::vec3(0.0f);
 
         force += separate(boids) * 4.0f;
@@ -39,8 +41,8 @@ public:
     }
 
     glm::mat4 calculateBoid() {
-        float yaw = std::atan2(forward.x, forward.z);
-        float pitch = std::asin(glm::clamp(-forward.y, -1.0f, 1.0f));
+        float yaw = atan2(forward.x, forward.z);
+        float pitch = asin(glm::clamp(-forward.y, -1.0f, 1.0f));
 
         glm::mat4 yawRotation = glm::rotate(glm::mat4(1.0f), yaw, glm::vec3(0.0f, 1.0f, 0.0f));
         glm::mat4 pitchRotation = glm::rotate(glm::mat4(1.0f), pitch, glm::vec3(1.0f, 0.0f, 0.0f));
@@ -62,7 +64,7 @@ private:
     const float maxSpeed = 13.0f;
     const float maxForce = 4.0f;
 
-    void randomize(std::vector<Boid*>& boids) {
+    void randomize(vector<Boid*>& boids) {
         for (int i = 0; i < 100; i++) {
             position = randomPos();
             velocity = randomVel();
@@ -74,7 +76,7 @@ private:
         }
     }
 
-    glm::vec3 separate(std::vector<Boid*>& boids) {
+    glm::vec3 separate(vector<Boid*>& boids) {
         glm::vec3 steer = glm::vec3(0.0f);
         int count = 0;
 
@@ -101,7 +103,7 @@ private:
         return seekDir(steer);
     }
 
-    glm::vec3 align(std::vector<Boid*>& boids) {
+    glm::vec3 align(vector<Boid*>& boids) {
         glm::vec3 avg = glm::vec3(0.0f);
         int count = 0;
 
@@ -124,7 +126,7 @@ private:
         return seekDir(avg);
     }
 
-    glm::vec3 cohere(std::vector<Boid*>& boids) {
+    glm::vec3 cohere(vector<Boid*>& boids) {
         glm::vec3 center = glm::vec3(0.0f);
         int count = 0;
 
@@ -225,7 +227,7 @@ private:
         return glm::normalize(v) * glm::linearRand(minSpeed, maxSpeed);
     }
 
-    bool isAvailable(std::vector<Boid*>& boids) {
+    bool isAvailable(vector<Boid*>& boids) {
         for (Boid* boid : boids) {
             if (!boid) {
                 continue;

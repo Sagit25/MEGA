@@ -25,41 +25,47 @@ class AnimationModel : public Model
 {
 public:
     Animator* animator;
-    float radius = 0.0f;
-    float length = 0.0f;
+    float radius = 0.0f; // for collision avoid
+    float length = 0.0f; // for boid calculation
 
     AnimationModel(const char* filePath, bool ignoreShadow = false, bool uvFlip = true)
     {
         loadModel(filePath, uvFlip);
-        setRadius();
+        setModelSize();
     }
 
-    std::map<string, BoneInfo>& GetBoneInfoMap() { return m_BoneInfoMap; }
+    map<string, BoneInfo>& GetBoneInfoMap() { return m_BoneInfoMap; }
 	int& GetBoneCount() { return m_BoneCounter; }
-
     virtual bool IsAnimated() const override { return true; }
 
 protected:
 
-	std::map<string, BoneInfo> m_BoneInfoMap;
+    // Bones are shared across meshes
+	map<string, BoneInfo> m_BoneInfoMap;
 	int m_BoneCounter = 0;
     
+    // for radius/length calculation
     glm::vec3 minPos = glm::vec3(+1000000.0f);
     glm::vec3 maxPos = glm::vec3(-1000000.0f);
 
-    void addPos(glm::vec3 position) {
-        minPos.x = std::min(minPos.x, position.x);
-        minPos.y = std::min(minPos.y, position.y);
-        minPos.z = std::min(minPos.z, position.z);
+    // renew minPos, maxPos
+    void renewEdgePosition(glm::vec3 position) {
+        minPos.x = min(minPos.x, position.x);
+        minPos.y = min(minPos.y, position.y);
+        minPos.z = min(minPos.z, position.z);
 
-        maxPos.x = std::max(maxPos.x, position.x);
-        maxPos.y = std::max(maxPos.y, position.y);
-        maxPos.z = std::max(maxPos.z, position.z);
+        maxPos.x = max(maxPos.x, position.x);
+        maxPos.y = max(maxPos.y, position.y);
+        maxPos.z = max(maxPos.z, position.z);
     }
 
-    void setRadius() {
+    /*
+     * set radius/length
+     * assume the model's forward direction is the x-axis.
+     */
+    void setModelSize() {
         glm::vec3 halfSize = (maxPos - minPos) * 0.5f;
-        radius = std::max(halfSize.y, halfSize.z);
+        radius = max(halfSize.y, halfSize.z);
         length = maxPos.x - minPos.x;
     }
 
@@ -85,7 +91,8 @@ protected:
 		}
 	}
 
-	void ExtractBoneWeightForVertices(std::vector<Vertex>& vertices, aiMesh* mesh, const aiScene* scene)
+    // extract bone data from mesh and apply weight to related vertices
+	void ExtractBoneWeightForVertices(vector<Vertex>& vertices, aiMesh* mesh, const aiScene* scene)
 	{
 		auto& boneInfoMap = m_BoneInfoMap;
 		int& boneCount = m_BoneCounter;
@@ -93,7 +100,7 @@ protected:
 		for (int boneIndex = 0; boneIndex < mesh->mNumBones; ++boneIndex)
 		{
 			int boneID = -1;
-			std::string boneName = mesh->mBones[boneIndex]->mName.C_Str();
+			string boneName = mesh->mBones[boneIndex]->mName.C_Str();
 			if (boneInfoMap.find(boneName) == boneInfoMap.end())
 			{
 				BoneInfo newBoneInfo;
@@ -122,22 +129,27 @@ protected:
 	}
 
     virtual void processNode(aiNode *node, const aiScene *scene) override {
-        if (std::string(node->mName.C_Str()) == "Sharkjaw") {
+        // cannot process sharkjaw node with current code
+        if (string(node->mName.C_Str()) == "Sharkjaw") {
             return;
         }
+
         for(unsigned int i = 0; i < node->mNumMeshes; i++) {
             aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
             subMeshes.push_back(processMesh(mesh, scene));
         }
+
+        // recursively apply to children
         for(unsigned int i = 0; i < node->mNumChildren; i++) {
             processNode(node->mChildren[i], scene);
         }
     }
 
     virtual SubMesh processMesh(aiMesh *mesh, const aiScene *scene) override {
-        std::vector<Vertex> vertices;
-        std::vector<unsigned int> indices;
+        vector<Vertex> vertices;
+        vector<unsigned int> indices;
 
+        // handle vertex: extract normal, tangent, tex coord
         for(unsigned int i = 0; i < mesh->mNumVertices; i++) {
             Vertex vertex = {};
             glm::vec3 vector;
@@ -148,7 +160,7 @@ protected:
             vector.y = mesh->mVertices[i].y;
             vector.z = mesh->mVertices[i].z;
             vertex.Position = vector;
-            addPos(vector);
+            renewEdgePosition(vector);
 
             if (mesh->HasNormals()) {
                 vector.x = mesh->mNormals[i].x;
@@ -177,6 +189,7 @@ protected:
             vertices.push_back(vertex);
         }
 
+        // handle face: extract indice
         for(unsigned int i = 0; i < mesh->mNumFaces; i++) {
             aiFace face = mesh->mFaces[i];
             for(unsigned int j = 0; j < face.mNumIndices; j++)
@@ -185,6 +198,7 @@ protected:
 
         SubMesh subMesh;
 
+        // extract textures
         if(mesh->mMaterialIndex >= 0) {
             aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
             
@@ -209,6 +223,7 @@ protected:
             }
         }
 
+        // handle vertex: extract bone and bone weights
 		ExtractBoneWeightForVertices(vertices, mesh, scene);
         
         subMesh.mesh = Mesh(vertices, indices);
