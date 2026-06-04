@@ -1,3 +1,5 @@
+// Based on the skeletal animation part of LearnOpenGL.
+
 #ifndef ASSIMP_GLM_HELPERS_H
 #define ASSIMP_GLM_HELPERS_H
 

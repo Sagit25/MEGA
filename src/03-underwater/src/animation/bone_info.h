@@ -1,3 +1,5 @@
+// Based on the skeletal animation part of LearnOpenGL.
+
 #ifndef BONE_INFO_H
 #define BONE_INFO_H
 

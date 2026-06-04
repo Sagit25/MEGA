@@ -1,3 +1,5 @@
+// Based on the skeletal animation part of LearnOpenGL.
+
 #ifndef ANIMATION_H
 #define ANIMATION_H
 
