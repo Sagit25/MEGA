@@ -132,7 +132,6 @@ protected:
         }
     }
 
-	// Submech processing (virtual for child class)
     virtual SubMesh processMesh(aiMesh *mesh, const aiScene *scene) override {
         std::vector<Vertex> vertices;
         std::vector<unsigned int> indices;
@@ -184,23 +183,19 @@ protected:
 
         SubMesh subMesh;
 
-        // mtl file based load texture
         if(mesh->mMaterialIndex >= 0) {
             aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
             
-            // Diffuse
             if(material->GetTextureCount(aiTextureType_DIFFUSE) > 0) {
                 aiString str;
                 material->GetTexture(aiTextureType_DIFFUSE, 0, &str);
                 subMesh.diffuse = loadMaterialTexture(str.C_Str());
             }
-            // Specular
             if(material->GetTextureCount(aiTextureType_SPECULAR) > 0) {
                 aiString str;
                 material->GetTexture(aiTextureType_SPECULAR, 0, &str);
                 subMesh.specular = loadMaterialTexture(str.C_Str());
             }
-            // Normal
             if(material->GetTextureCount(aiTextureType_HEIGHT) > 0) {
                 aiString str;
                 material->GetTexture(aiTextureType_HEIGHT, 0, &str);
