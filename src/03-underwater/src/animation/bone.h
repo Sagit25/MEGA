@@ -1,8 +1,6 @@
 #ifndef BONE_H
 #define BONE_H
 
-/* Container for bone data */
-
 #include <cassert>
 #include <string>
 #include <vector>
@@ -89,9 +87,8 @@ public:
 	}
 	glm::mat4 GetLocalTransform() { return m_LocalTransform; }
 	std::string GetBoneName() const { return m_Name; }
-	
 
-
+private:
 	int GetPositionIndex(float animationTime)
 	{
 		for (int index = 0; index < m_NumPositions - 1; ++index)
@@ -121,9 +118,6 @@ public:
 		}
 		assert(0);
 	}
-
-
-private:
 
 	float GetScaleFactor(float lastTimeStamp, float nextTimeStamp, float animationTime)
 	{
