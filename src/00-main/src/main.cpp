@@ -251,21 +251,20 @@ int main()
     // Add entities to scene.
     // you can change the position/orientation.
     Scene scene;
-    scene.addEntity(new Entity(&barrelModel, glm::vec3(2.5f, 0.0f, -2.0f), 0, 0, 0, 0.1f));
+    
 
     glm::mat4 planeWorldTransform = glm::mat4(1.0f);
     planeWorldTransform = glm::scale(planeWorldTransform, glm::vec3(planeSize));
-    planeWorldTransform = glm::translate(glm::vec3(0.0f, -0.5f, 0.0f)) * planeWorldTransform;
+    planeWorldTransform = glm::translate(glm::vec3(0.0f, 0.0f, 0.0f)) * planeWorldTransform;
     scene.addEntity(new Entity(&grassGroundModel, planeWorldTransform));
 
-    scene.addEntity(new Entity(&fireExtModel, glm::vec3(2,-1,0), 0.0f, 180.0f, 0.0f, 0.002f));
-
-    // add your model's entity here!
-    scene.addEntity(new Entity(&catModel, glm::vec3(5.5f, -0.5f, 1.0f), -90.0f, 0.0f, 0.0f, 0.05f));
-    scene.addEntity(new Entity(&roomModel, glm::vec3(-4.0f, 0.0f, 10.0f), 0.0f, 0.0f, 0.0f, 0.01f));
-    scene.addEntity(new Entity(&houseModel, glm::vec3(4.0f, 0.0f, -10.0f), 0.0f, 0.0f, 0.0f, 1.0f));
-    scene.addEntity(new Entity(&sofaModel, glm::vec3(0.0f, 0.0f, -5.0f), 0.0f, 180.0f, 0.0f, 1.0f));
-    scene.addEntity(new Entity(&tableModel, glm::vec3(0.0f, 0.0f, 5.0f), 0.0f, 0.0f, 0.0f, 1.0f));
+    scene.addEntity(new Entity(&fireExtModel, glm::vec3(-1.5f, 0.0f, -2.5f), 0.0f, 180.0f, 0.0f, 0.001f));
+    scene.addEntity(new Entity(&barrelModel, glm::vec3(-2.0f, 0.54f, 5.0f), 0, 0, 0, 0.05f));
+    scene.addEntity(new Entity(&catModel, glm::vec3(3.8f, 0.0f, -5.0f), -90.0f, 0.0f, 0.0f, 0.02f));
+    scene.addEntity(new Entity(&roomModel, glm::vec3(-4.0f, 0.0f, 4.0f), 0.0f, 90.0f, 0.0f, 0.02f));
+    scene.addEntity(new Entity(&houseModel, glm::vec3(2.0f, 0.0f, -4.0f), 0.0f, -90.0f, 0.0f, 1.0f));
+    scene.addEntity(new Entity(&sofaModel, glm::vec3(-0.5f, 0.1f, -3.5f), 0.0f, 0.0f, 0.0f, 0.35f));
+    scene.addEntity(new Entity(&tableModel, glm::vec3(4.5f, 0.0f, -3.0f), 0.0f, 0.0f, 0.0f, 1.2f));
 
     // define depth texture
     DepthMapTexture depth = DepthMapTexture(SHADOW_WIDTH, SHADOW_HEIGHT);
