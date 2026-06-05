@@ -15,31 +15,42 @@ public:
     glm::vec3 position;
     glm::vec3 velocity;
     glm::vec3 forward;
+    // unique parameter of object
     float r = 0.5f;
     float len = 1.0f;
 
     Boid(float r, float len, vector<Boid*>& boids)
-        : r(r), len(len)
+        : r(r), len(len),
+          avoidDist(r * 2.5f),
+          alignDist(len * 3.0f),
+          cohereDist(len * 4.0f)
     {
         randomize(boids);
     }
 
+    /*
+     * update velocity/position of object
+     * based on Boids algorithm of Craig Reynolds
+     */ 
     void advance(float dt, vector<Boid*>& boids) {
         glm::vec3 force = glm::vec3(0.0f);
 
         force += separate(boids) * 4.0f;
         force += align(boids) * 0.5f;
         force += cohere(boids) * 0.15f;
-        force += boundForce() * 1.6f;
         force += wander() * 0.05f;
+        force = limit(force, maxForce);
 
-        velocity += limit(force, maxForce) * dt;
+        velocity += force * dt;
         velocity = limitSpeed(velocity);
+
         position += velocity * dt;
-        fitBound();
+        
+        wrapBound();
         updateForward(dt);
     }
 
+    // transform matrix of the object
     glm::mat4 calculateBoid() {
         float yaw = atan2(forward.x, forward.z);
         float pitch = asin(glm::clamp(-forward.y, -1.0f, 1.0f));
@@ -64,6 +75,15 @@ private:
     const float maxSpeed = 13.0f;
     const float maxForce = 4.0f;
 
+    float avoidDist;
+    float alignDist;
+    float cohereDist;
+
+    /*
+     * setting initial state of current object
+     * should not overlap with other objects
+     * try with random state at most 100 times
+     */ 
     void randomize(vector<Boid*>& boids) {
         for (int i = 0; i < 100; i++) {
             position = randomPos();
@@ -76,6 +96,38 @@ private:
         }
     }
 
+    glm::vec3 randomPos() {
+        return glm::vec3(
+            glm::linearRand(xMin, xMax),
+            glm::linearRand(yMin, yMax),
+            glm::linearRand(zMin, zMax));
+    }
+
+    glm::vec3 randomVel() {
+        glm::vec3 v = glm::sphericalRand(1.0f);
+        v.y *= 0.35f;
+        return glm::normalize(v) * glm::linearRand(minSpeed, maxSpeed);
+    }
+
+    // is this object doesn't overlap with others?
+    bool isAvailable(vector<Boid*>& boids) {
+        for (Boid* boid : boids) {
+            if (!boid) {
+                continue;
+            }
+
+            glm::vec3 diff = position - boid->position;
+            float radiusSum = r + boid->r;
+
+            if (glm::dot(diff, diff) <= radiusSum * radiusSum) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    // Move against the others
     glm::vec3 separate(vector<Boid*>& boids) {
         glm::vec3 steer = glm::vec3(0.0f);
         int count = 0;
@@ -87,9 +139,9 @@ private:
 
             glm::vec3 diff = position - boid->position;
             float dist = glm::length(diff);
-            float avoidDist = (r + boid->r) * 2.5f;
+            float pairAvoidDist = avoidDist + boid->avoidDist;
 
-            if (dist > 0.001f && dist < avoidDist) {
+            if (dist > 0.001f && dist < pairAvoidDist) {
                 steer += glm::normalize(diff) / dist;
                 count++;
             }
@@ -100,9 +152,10 @@ private:
         }
 
         steer /= (float)count;
-        return seekDir(steer);
+        return steerTo(steer);
     }
 
+    // Move along the others
     glm::vec3 align(vector<Boid*>& boids) {
         glm::vec3 avg = glm::vec3(0.0f);
         int count = 0;
@@ -112,7 +165,7 @@ private:
                 continue;
             }
 
-            if (glm::length(position - boid->position) < len * 3.0f) {
+            if (glm::length(position - boid->position) < alignDist) {
                 avg += boid->velocity;
                 count++;
             }
@@ -123,9 +176,10 @@ private:
         }
 
         avg /= (float)count;
-        return seekDir(avg);
+        return steerTo(avg);
     }
 
+    // Move to the center of boids
     glm::vec3 cohere(vector<Boid*>& boids) {
         glm::vec3 center = glm::vec3(0.0f);
         int count = 0;
@@ -135,7 +189,7 @@ private:
                 continue;
             }
 
-            if (glm::length(position - boid->position) < len * 4.0f) {
+            if (glm::length(position - boid->position) < cohereDist) {
                 center += boid->position;
                 count++;
             }
@@ -146,27 +200,15 @@ private:
         }
 
         center /= (float)count;
-        return seek(center);
+        return steerTo(center - position);
     }
 
-    glm::vec3 boundForce() {
-        glm::vec3 force = glm::vec3(0.0f);
-        float margin = len * 2.0f;
-
-        if (position.x < xMin + margin) force.x += 1.0f;
-        if (position.x > xMax - margin) force.x -= 1.0f;
-        if (position.y < yMin + margin) force.y += 1.0f;
-        if (position.y > yMax - margin) force.y -= 1.0f;
-        if (position.z < zMin + margin) force.z += 1.0f;
-        if (position.z > zMax - margin) force.z -= 1.0f;
-
-        return seekDir(force);
-    }
-
+    // Move randomly
     glm::vec3 wander() {
         return glm::sphericalRand(maxForce);
     }
 
+    // Update forward smoothly (lerp)
     void updateForward(float dt) {
         if (glm::length(velocity) < 0.001f) {
             return;
@@ -177,17 +219,22 @@ private:
         forward = glm::normalize(glm::mix(forward, targetForward, u));
     }
 
-    glm::vec3 seek(glm::vec3 target) {
-        return seekDir(target - position);
-    }
-
-    glm::vec3 seekDir(glm::vec3 dir) {
+    // Steering force to desired velocity(maxSpeed to dir)
+    glm::vec3 steerTo(glm::vec3 dir) {
         if (glm::length(dir) < 0.001f) {
             return glm::vec3(0.0f);
         }
 
         glm::vec3 desired = glm::normalize(dir) * maxSpeed;
         return limit(desired - velocity, maxForce);
+    }
+
+    glm::vec3 limit(glm::vec3 v, float maxLength) {
+        if (glm::length(v) > maxLength) {
+            return glm::normalize(v) * maxLength;
+        }
+
+        return v;
     }
 
     glm::vec3 limitSpeed(glm::vec3 v) {
@@ -206,68 +253,20 @@ private:
         return v;
     }
 
-    glm::vec3 limit(glm::vec3 v, float maxLength) {
-        if (glm::length(v) > maxLength) {
-            return glm::normalize(v) * maxLength;
-        }
-
-        return v;
+    // wrap around the position
+    void wrapBound() {
+        wrapAxis(position.x, xMin, xMax);
+        wrapAxis(position.y, yMin, yMax);
+        wrapAxis(position.z, zMin, zMax);
     }
 
-    glm::vec3 randomPos() {
-        return glm::vec3(
-            glm::linearRand(xMin, xMax),
-            glm::linearRand(yMin, yMax),
-            glm::linearRand(zMin, zMax));
-    }
-
-    glm::vec3 randomVel() {
-        glm::vec3 v = glm::sphericalRand(1.0f);
-        v.y *= 0.35f;
-        return glm::normalize(v) * glm::linearRand(minSpeed, maxSpeed);
-    }
-
-    bool isAvailable(vector<Boid*>& boids) {
-        for (Boid* boid : boids) {
-            if (!boid) {
-                continue;
-            }
-
-            glm::vec3 diff = position - boid->position;
-            float radiusSum = r + boid->r;
-
-            if (glm::dot(diff, diff) <= radiusSum * radiusSum) {
-                return false;
-            }
+    void wrapAxis(float& value, float minValue, float maxValue) {
+        float range = maxValue - minValue;
+        while (value < minValue) {
+            value += range;
         }
-
-        return true;
-    }
-
-    void fitBound() {
-        if (position.x < xMin) {
-            position.x = xMin;
-            velocity.x = glm::abs(velocity.x);
-        }
-        if (position.x > xMax) {
-            position.x = xMax;
-            velocity.x = -glm::abs(velocity.x);
-        }
-        if (position.y < yMin) {
-            position.y = yMin;
-            velocity.y = glm::abs(velocity.y);
-        }
-        if (position.y > yMax) {
-            position.y = yMax;
-            velocity.y = -glm::abs(velocity.y);
-        }
-        if (position.z < zMin) {
-            position.z = zMin;
-            velocity.z = glm::abs(velocity.z);
-        }
-        if (position.z > zMax) {
-            position.z = zMax;
-            velocity.z = -glm::abs(velocity.z);
+        while (value > maxValue) {
+            value -= range;
         }
     }
 };
