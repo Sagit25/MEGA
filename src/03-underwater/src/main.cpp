@@ -247,20 +247,24 @@ int main()
     // Add entities to scene.
     // you can change the position/orientation.
     Scene scene;
-    std::vector<Boid*> boids;
+    std::vector<Boid*> allBoids;
+    std::vector<Boid*> sharkBoids;
+    std::vector<Boid*> bassBoids;
 
-    for (int i = 0; i < 6; i++) {
+    for (int i = 0; i < 12; i++) {
         Entity* sharkEntity = new Entity(&sharkModel, glm::scale(glm::vec3(2.0f)));
         scene.addEntity(sharkEntity);
-        sharkEntity->boid = new Boid(sharkModel.radius, sharkModel.length, boids);
-        boids.push_back(sharkEntity->boid);
+        sharkEntity->boid = new Boid(sharkModel.radius, sharkModel.length, allBoids, 0.35f);
+        sharkBoids.push_back(sharkEntity->boid);
+        allBoids.push_back(sharkEntity->boid);
     }
 
-    for (int i = 0; i < 15; i++) {
+    for (int i = 0; i < 45; i++) {
         Entity* bassEntity = new Entity(&bassModel, glm::rotate(glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f)) * glm::rotate(glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f)));
         scene.addEntity(bassEntity);
-        bassEntity->boid = new Boid(bassModel.radius, bassModel.length, boids);
-        boids.push_back(bassEntity->boid);
+        bassEntity->boid = new Boid(bassModel.radius, bassModel.length, allBoids);
+        bassBoids.push_back(bassEntity->boid);
+        allBoids.push_back(bassEntity->boid);
     }
 
     scene.addEntity(new Entity(&shellModel, glm::translate(glm::vec3(3.0f, 0.0f, 3.0f))));
@@ -343,8 +347,11 @@ int main()
         bassAnimator.UpdateAnimation(2*deltaTime);
         sharkAnimator.UpdateAnimation(deltaTime);
 
-        for (auto boid: boids) {
-            boid->advance(deltaTime, boids);
+        for (auto boid: sharkBoids) {
+            boid->advance(deltaTime, sharkBoids, allBoids);
+        }
+        for (auto boid: bassBoids) {
+            boid->advance(deltaTime, bassBoids, allBoids);
         }
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);

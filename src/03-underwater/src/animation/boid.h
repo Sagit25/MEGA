@@ -19,12 +19,13 @@ public:
     float r = 0.5f;
     float len = 1.0f;
 
-    Boid(float r, float len, vector<Boid*>& boids)
+    Boid(float r, float len, vector<Boid*>& boids, float flockStrength = 1.0f)
         : r(r), len(len),
-          avoidDist(r * 2.5f),
-          alignDist(len * 3.0f),
-          cohereDist(len * 4.0f),
-          margin(len * 2.0f)
+          avoidDist(r * 2.1f),
+          alignDist(len * 5.5f),
+          cohereDist(len * 7.0f),
+          margin(len * 2.0f),
+          flockStrength(flockStrength)
     {
         randomize(boids);
     }
@@ -33,14 +34,14 @@ public:
      * update velocity/position of object
      * based on Boids algorithm of Craig Reynolds
      */ 
-    void advance(float dt, vector<Boid*>& boids) {
+    void advance(float dt, vector<Boid*>& groupBoids, vector<Boid*>& allBoids) {
         glm::vec3 force = glm::vec3(0.0f);
 
-        force += separate(boids) * 4.0f;
-        force += align(boids) * 0.5f;
-        force += cohere(boids) * 0.15f;
-        force += boundForce() * 1.6f;
-        force += wander() * 0.05f;
+        force += separate(allBoids) * sepWeight;
+        force += align(groupBoids) * alignWeight * flockStrength;
+        force += cohere(groupBoids) * cohereWeight * flockStrength;
+        force += boundForce() * boundWeight;
+        force += wander() * wanderWeight;
         force = limit(force, maxForce);
 
         velocity += force * dt;
@@ -48,6 +49,7 @@ public:
 
         position += velocity * dt;
         
+        resolveOverlaps(allBoids);
         fitBound();
         updateForward(dt);
     }
@@ -66,21 +68,33 @@ public:
     }
 
 private:
-    const float xMin = -40.0f;
-    const float xMax = 80.0f;
+    static constexpr float sepWeight = 3.8f;
+    static constexpr float alignWeight = 1.15f;
+    static constexpr float cohereWeight = 0.55f;
+    static constexpr float boundWeight = 1.5f;
+    static constexpr float wanderWeight = 0.025f;
+
+    static constexpr float initVelYScale = 0.24f;
+    static constexpr float wanderYScale = 0.25f;
+    static constexpr float steerYScale = 0.45f;
+    static constexpr float velYScale = 0.82f;
+
+    const float xMin = -50.0f;
+    const float xMax = 110.0f;
     const float yMin = 0.0f;
     const float yMax = 40.0f;
-    const float zMin = -50.0f;
-    const float zMax = 0.0f;
+    const float zMin = -110.0f;
+    const float zMax = 50.0f;
 
-    const float minSpeed = 7.0f;
-    const float maxSpeed = 13.0f;
-    const float maxForce = 4.0f;
+    const float minSpeed = 11.0f;
+    const float maxSpeed = 20.0f;
+    const float maxForce = 6.0f;
 
     float avoidDist;
     float alignDist;
     float cohereDist;
     float margin;
+    float flockStrength;
 
     /*
      * setting initial state of current object
@@ -108,7 +122,7 @@ private:
 
     glm::vec3 randomVel() {
         glm::vec3 v = glm::sphericalRand(1.0f);
-        v.y *= 0.35f;
+        v.y *= initVelYScale;
         return glm::normalize(v) * glm::linearRand(minSpeed, maxSpeed);
     }
 
@@ -222,7 +236,9 @@ private:
 
     // Move randomly
     glm::vec3 wander() {
-        return glm::sphericalRand(maxForce);
+        glm::vec3 force = glm::sphericalRand(maxForce);
+        force.y *= wanderYScale;
+        return force;
     }
 
     // Update forward smoothly (lerp)
@@ -238,6 +254,7 @@ private:
 
     // Steering force to desired velocity(maxSpeed to dir)
     glm::vec3 steerTo(glm::vec3 dir) {
+        dir.y *= steerYScale;
         if (glm::length(dir) < 0.001f) {
             return glm::vec3(0.0f);
         }
@@ -255,6 +272,7 @@ private:
     }
 
     glm::vec3 limitSpeed(glm::vec3 v) {
+        v.y *= velYScale;
         float speed = glm::length(v);
 
         if (speed < 0.001f) {
@@ -268,6 +286,34 @@ private:
         }
 
         return v;
+    }
+
+    /*
+     * resolve overlapped position,
+     * remove velocity toward overlapping direction
+     */
+    void resolveOverlaps(vector<Boid*>& boids) {
+        for (Boid* boid : boids) {
+            if (!boid || boid == this) {
+                continue;
+            }
+
+            glm::vec3 diff = position - boid->position;
+            float minDist = (r + boid->r) * 1.05f;
+            float distSquared = glm::dot(diff, diff);
+            if (distSquared >= minDist * minDist) {
+                continue;
+            }
+
+            float dist = glm::sqrt(distSquared);
+            glm::vec3 pushDir = dist > 0.001f ? diff / dist : forward;
+            position += pushDir * (minDist - dist);
+
+            float inSpeed = glm::dot(velocity, pushDir);
+            if (inSpeed < 0.0f) {
+                velocity -= pushDir * inSpeed;
+            }
+        }
     }
 
     // reflection at the boundary
