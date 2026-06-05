@@ -24,6 +24,7 @@
 #include <ctime>
 #include <cmath>
 
+
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
@@ -107,9 +108,8 @@ glm::mat4 getAirplaneModelMatrix(const Airplane& airplane)
 
 glm::mat4 getToothlessFlightModelMatrix(float time)
 {
-    const float twoPi = 6.28318530718f;
     const float loopDuration = 18.0f;
-    const float angle = time / loopDuration * twoPi;
+    const float angle = time / loopDuration * M_PI;
     const float radiusX = 7.0f;
     const float radiusZ = 5.0f;
 
@@ -154,9 +154,8 @@ struct DragonFlightPose {
 
 DragonFlightPose getDragonFlightPose(float time)
 {
-    const float twoPi = 6.28318530718f;
     const float loopDuration = 29.0f;
-    const float angle = time / loopDuration * twoPi + 1.2f;
+    const float angle = time / loopDuration * M_PI + 1.2f;
     const float radiusX = 10.5f;
     const float radiusZ = 8.3f;
     const float zWaveFrequency = 2.35f;
