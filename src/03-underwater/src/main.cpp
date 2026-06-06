@@ -8,12 +8,10 @@
 #include <glm/gtc/type_ptr.hpp>
 #include "shader.h"
 #include "opengl_utils.h"
-#include "geometry_primitives.h"
 #include <iostream>
 #include <vector>
 #include "camera.h"
 #include "texture.h"
-#include "texture_cube.h"
 #include "model.h"
 #include "mesh.h"
 #include "scene.h"
@@ -216,7 +214,6 @@ int main()
     // ------------------------------------
     Shader lightingShader("../shaders/shader_lighting.vs", "../shaders/shader_lighting.fs"); // you can name your shader files however you like
     Shader shadowShader("../shaders/shadow.vs", "../shaders/shadow.fs");
-    Shader skyboxShader("../shaders/shader_skybox.vs", "../shaders/shader_skybox.fs");
     Shader csmShader("../shaders/csm.vs", "../shaders/csm.fs", "../shaders/csm.gs");
 
 
@@ -278,19 +275,7 @@ int main()
     DepthMapTexture depth = DepthMapTexture(SHADOW_WIDTH, SHADOW_HEIGHT);
 
 
-    // skybox
-    std::vector<std::string> faces
-    {
-        "../resources/underwater/right.jpg",
-        "../resources/underwater/left.jpg",
-        "../resources/underwater/top.jpg",
-        "../resources/underwater/bottom.jpg",
-        "../resources/underwater/front.jpg",
-        "../resources/underwater/back.jpg"
-    };
-    CubemapTexture skyboxTexture = CubemapTexture(faces);
-    unsigned int VAOskybox, VBOskybox;
-    getPositionVAO(skybox_positions, sizeof(skybox_positions), VAOskybox, VBOskybox);
+    glClearColor(0.15f, 0.52f, 0.73f, 1.0f);
 
     lightingShader.use();
     lightingShader.setInt("material.diffuseSampler", 0);
@@ -298,9 +283,6 @@ int main()
     lightingShader.setInt("material.normalSampler", 2);
     lightingShader.setInt("depthMapSampler", 3);
     lightingShader.setFloat("material.shininess", 64.f);    // set shininess to constant value.
-
-    skyboxShader.use();
-    skyboxShader.setInt("skyboxTexture1", 0);
 
     // I referenced this part from learnopengl Cascaded Shadow Mapping code
     glGenFramebuffers(1, &lightFBO);
@@ -521,22 +503,6 @@ int main()
             }
         }
         
-        // use skybox Shader
-        skyboxShader.use();
-        glDepthFunc(GL_LEQUAL);
-        view = glm::mat4(glm::mat3(camera.GetViewMatrix()));
-        skyboxShader.setMat4("view", view);
-        skyboxShader.setMat4("projection", projection);
-
-        // render a skybox
-        glBindVertexArray(VAOskybox);
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_CUBE_MAP, skyboxTexture.textureID);
-        glDrawArrays(GL_TRIANGLES, 0, 36);
-
-        glBindVertexArray(0);
-        glDepthFunc(GL_LESS);
-
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
         // -------------------------------------------------------------------------------
         glfwSwapBuffers(window);

@@ -32,6 +32,9 @@ uniform float useLighting;
 uniform float usePCF;
 uniform float useCSM;
 
+const vec3 waterColor = vec3(0.15, 0.5, 0.7);
+const float waterFogDensity = 0.007;
+
 // I referenced this part from learnopengl Stratified Poisson Sampling part
 uniform sampler2D depthMapSampler;
 
@@ -177,6 +180,16 @@ float ShadowCalculation(vec4 fragPosLightSpace)
     return shadow;
 }
 
+vec3 ApplyUnderwaterColor(vec3 litColor)
+{
+    float viewDistance = length(viewPos - FragPos);
+    float fogAmount = 1.0 - exp(-viewDistance * waterFogDensity);
+    vec3 absorption = exp(-vec3(0.03, 0.02, 0.01) * viewDistance);
+    vec3 absorbedColor = litColor * absorption;
+
+    return mix(absorbedColor, waterColor, clamp(fogAmount, 0.0, 0.42));
+}
+
 
 void main()
 {
@@ -242,5 +255,5 @@ void main()
         }
 	}
 	
-    FragColor = vec4(totalColor, 1.0);
+    FragColor = vec4(ApplyUnderwaterColor(totalColor), 1.0);
 }
