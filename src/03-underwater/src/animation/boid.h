@@ -79,12 +79,12 @@ private:
     static constexpr float steerYScale = 0.45f;
     static constexpr float velYScale = 0.995f;
 
-    const float xMin = -50.0f;
-    const float xMax = 110.0f;
+    const float xMin = -85.0f;
+    const float xMax = 85.0f;
     const float yMin = 0.0f;
     const float yMax = 40.0f;
-    const float zMin = -110.0f;
-    const float zMax = 50.0f;
+    const float zMin = -85.0f;
+    const float zMax = 42.5f;
 
     const float minSpeed = 11.0f;
     const float maxSpeed = 20.0f;
