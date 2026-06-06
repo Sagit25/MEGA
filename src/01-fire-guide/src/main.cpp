@@ -384,7 +384,7 @@ int main()
     boulderModel.setNormal("../resources/boulder/boulder_n.png");
     Model airplane1Model("../resources/airplane1/11803_Airplane_v1_l1.obj");
     Model airplane2Model("../resources/airplane2/11804_Airplane_v2_l2.obj");
-    Model dragonModel("../resources/dragon/Dragon 2.5_dae.dae");
+    Model dragonModel("../resources/dragon/dragon.obj");
     dragonModel.setDiffuse("../resources/dragon/textures/Dragon_Bump_Col2.jpg");
     dragonModel.setNormal("../resources/dragon/textures/Dragon_Nor.jpg");
 
