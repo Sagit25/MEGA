@@ -3,10 +3,13 @@
 #define STB_IMAGE_IMPLEMENTATION   // use of stb functions once and for all
 #include "stb_image.h"
 
+#include <algorithm>
+#include <cstdio>
 #include <string>
 #include <fstream>
 #include <sstream>
 #include <iostream>
+#include <vector>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
@@ -78,4 +81,79 @@ public:
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
 };
+
+class CausticTexture
+{
+public:
+    unsigned int ID = 0;
+    int width = 0;
+    int height = 0;
+    int frameCount = 0;
+
+    CausticTexture(const char* directory, int frameCount)
+        : frameCount(frameCount)
+    {
+        std::vector<unsigned char> allFrames;
+
+        // load datas
+        for (int i = 0; i < frameCount; i++) {
+            char filePath[256];
+            std::snprintf(filePath, sizeof(filePath), "%s/frame%02d.png", directory, i + 1);
+
+            int frameWidth = 0;
+            int frameHeight = 0;
+            int frameChannels = 0;
+
+            stbi_set_flip_vertically_on_load(false);
+            unsigned char* framePixels = stbi_load(filePath, &frameWidth, &frameHeight, &frameChannels, 1);
+            
+            if (!framePixels) {
+                std::cout << "Failed to load texture: " << filePath << std::endl;
+                stbi_image_free(framePixels);
+                return;
+            }
+
+            if (i == 0) {
+                width = frameWidth;
+                height = frameHeight;
+            }
+            else if (frameWidth != width || frameHeight != height) {
+                std::cout << "Caustic texture size mismatch: " << filePath << std::endl;
+                stbi_image_free(framePixels);
+                return;
+            }
+
+            int pixelCount = frameWidth * frameHeight;
+            allFrames.insert(allFrames.end(), framePixels, framePixels + pixelCount);
+            stbi_image_free(framePixels);
+        }
+
+        // normalize to emphasize caustics
+        unsigned char minValue = allFrames[0];
+        unsigned char maxValue = allFrames[0];
+        for (int i = 1; i < allFrames.size(); i++) {
+            minValue = std::min(minValue, allFrames[i]);
+            maxValue = std::max(maxValue, allFrames[i]);
+        }
+
+        int range = std::max(1, (int)maxValue - (int)minValue);
+        for (int i = 0; i < allFrames.size(); i++) {
+            allFrames[i] = (unsigned char)(((int)allFrames[i] - (int)minValue) * 255 / range);
+        }
+
+        glGenTextures(1, &ID);
+        glBindTexture(GL_TEXTURE_2D_ARRAY, ID);
+        
+        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+        glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_R8, width, height, frameCount,
+            0, GL_RED, GL_UNSIGNED_BYTE, allFrames.data());
+        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        
+        glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
+    }
+};
+
 #endif

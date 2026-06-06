@@ -8,6 +8,7 @@
 #include <glm/gtc/type_ptr.hpp>
 #include "shader.h"
 #include "opengl_utils.h"
+#include <algorithm>
 #include <iostream>
 #include <vector>
 #include "camera.h"
@@ -167,7 +168,6 @@ std::vector<glm::mat4> getLightSpaceMatrices(DirectionalLight* light)
     return ret;
 }
 
-
 int main()
 {
     // glfw: initialize and configure
@@ -282,7 +282,12 @@ int main()
     lightingShader.setInt("material.specularSampler", 1);
     lightingShader.setInt("material.normalSampler", 2);
     lightingShader.setInt("depthMapSampler", 3);
+    lightingShader.setInt("causticSampler", 5);
     lightingShader.setFloat("material.shininess", 64.f);    // set shininess to constant value.
+
+    const int causticFrameCount = 32;
+    const char* causticFrameDirectory = "../resources/caustics/caustic_frames";
+    CausticTexture causticTexture(causticFrameDirectory, causticFrameCount);
 
     // I referenced this part from learnopengl Cascaded Shadow Mapping code
     glGenFramebuffers(1, &lightFBO);
@@ -444,6 +449,8 @@ int main()
         lightingShader.setVec3("light.color", sun.lightColor);
         lightingShader.setVec3("viewPos", camera.Position);
         lightingShader.setMat4("lightSpaceMatrix", lightSpaceMatrix);
+        lightingShader.setFloat("currentTime", currentTime);
+        lightingShader.setFloat("causticFrameCount", causticFrameCount);
 
         // bind depth map to texture unit 3
         glActiveTexture(GL_TEXTURE3);
@@ -454,6 +461,8 @@ int main()
         glActiveTexture(GL_TEXTURE4);
         glBindTexture(GL_TEXTURE_2D_ARRAY, lightDepthMaps);
         lightingShader.setInt("csmDepthMapSampler", 4);
+        glActiveTexture(GL_TEXTURE5);
+        glBindTexture(GL_TEXTURE_2D_ARRAY, causticTexture.ID);
         lightingShader.setInt("cascadeCount", shadowCascadeLevels.size());
         for (size_t i = 0; i < shadowCascadeLevels.size(); ++i)
         {

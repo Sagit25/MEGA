@@ -35,6 +35,13 @@ uniform float useCSM;
 const vec3 waterColor = vec3(0.15, 0.5, 0.7);
 const float waterFogDensity = 0.007;
 
+uniform sampler2DArray causticSampler;
+uniform float currentTime;
+uniform float causticFrameCount;
+
+const float causticStrength = 0.85;
+const float causticFrameRate = 18.0;
+
 // I referenced this part from learnopengl Stratified Poisson Sampling part
 uniform sampler2D depthMapSampler;
 
@@ -190,6 +197,24 @@ vec3 ApplyUnderwaterColor(vec3 litColor)
     return mix(absorbedColor, waterColor, clamp(fogAmount, 0.0, 0.42));
 }
 
+float CausticLight(vec3 position, vec3 normal)
+{
+    vec2 uv_coord = position.xz * 0.07;
+    float frame_f = mod(currentTime * causticFrameRate, causticFrameCount);
+    float currentFrame = floor(frame_f);
+    float nextFrame = mod(currentFrame + 1.0, causticFrameCount);
+    float t = frame_f - currentFrame;
+
+    float current = texture(causticSampler, vec3(uv_coord, currentFrame)).r;
+    float next = texture(causticSampler, vec3(uv_coord, nextFrame)).r;
+    float caustic = mix(current, next, t);
+
+    float NdotL = max(dot(normalize(normal), normalize(-light.dir)), 0.0);
+    float falloff = 1.0 - length(viewPos - position) / 100.0;
+
+    return caustic * (0.5 + 0.5 * NdotL) * (0.2 + 0.8 * falloff);
+}
+
 
 void main()
 {
@@ -254,6 +279,10 @@ void main()
             totalColor += (1.0f - shadow) * specular;
         }
 	}
+
+    float caustic = CausticLight(FragPos, normal);
+    vec3 causticColor = mix(vec3(1.0), waterColor, 0.35);
+    totalColor += causticColor * light.color * caustic * causticStrength;
 	
     FragColor = vec4(ApplyUnderwaterColor(totalColor), 1.0);
 }
