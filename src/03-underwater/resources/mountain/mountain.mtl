@@ -1,0 +1,9 @@
+newmtl Terrain003
+Ns 16.0
+Ka 0.7 0.7 0.7
+Kd 0.8 0.8 0.8
+Ks 0.08 0.08 0.08
+Ni 1.0
+d 1.0
+illum 2
+map_Kd texture/mountain_d.jpg

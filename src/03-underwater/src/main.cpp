@@ -238,8 +238,11 @@ int main()
     sharkModel.length *= 2;
 
     Model shellModel = Model("../resources/seashell/seashell1/seashell1.obj");
+    Model shell2Model = Model("../resources/seashell/seashell2/seashell2.obj");
+    Model pebbleModel = Model("../resources/seashell/pebble/pebble.obj");
+    Model boatModel = Model("../resources/wooden_boat/wooden_boat.obj");
 
-    Model floorModel = Model("../resources/floor/floor.obj", true);
+    Model floorModel = Model("../resources/mountain/mountain.obj", true);
 
     // Add entities to scene.
     // you can change the position/orientation.
@@ -264,12 +267,35 @@ int main()
         allBoids.push_back(bassEntity->boid);
     }
 
-    scene.addEntity(new Entity(&shellModel, glm::translate(glm::vec3(3.0f, 0.0f, 3.0f))));
-    for (int i = 0; i < 4; i++) {
-        for(int j = 0; j < 4; j++) {
-            scene.addEntity(new Entity(&floorModel, glm::translate(glm::vec3(i * 20.0f, -3.0f, j * -20.0f)) * glm::scale(glm::vec3(20.0f))));
-        }
-    }
+    auto propTransform = [](glm::vec3 position, float yaw, float scale) {
+        glm::mat4 transform = glm::translate(glm::mat4(1.0f), position);
+        transform = glm::rotate(transform, glm::radians(yaw), glm::vec3(0.0f, 1.0f, 0.0f));
+        return glm::scale(transform, glm::vec3(scale));
+    };
+    auto boatTransform = [](glm::vec3 position, float yaw, float pitch, float scale) {
+        glm::mat4 transform = glm::translate(glm::mat4(1.0f), position);
+        transform = glm::rotate(transform, glm::radians(yaw), glm::vec3(0.0f, 1.0f, 0.0f));
+        transform = glm::rotate(transform, glm::radians(pitch), glm::vec3(1.0f, 0.0f, 0.0f));
+        return glm::scale(transform, glm::vec3(scale));
+    };
+
+    scene.addEntity(new Entity(&shellModel, propTransform(glm::vec3(5.0f, 2.85f, -7.0f), -22.0f, 0.65f)));
+    scene.addEntity(new Entity(&shellModel, propTransform(glm::vec3(22.0f, -0.33f, -22.0f), 38.0f, 0.75f)));
+    scene.addEntity(new Entity(&shellModel, propTransform(glm::vec3(43.0f, -0.45f, -16.0f), -48.0f, 0.58f)));
+    scene.addEntity(new Entity(&shell2Model, propTransform(glm::vec3(12.0f, -0.08f, -18.0f), -35.0f, 0.25f)));
+    scene.addEntity(new Entity(&shell2Model, propTransform(glm::vec3(30.0f, -1.71f, -38.0f), 24.0f, 0.20f)));
+    scene.addEntity(new Entity(&shell2Model, propTransform(glm::vec3(53.0f, -0.79f, -28.0f), -62.0f, 0.22f)));
+    scene.addEntity(new Entity(&pebbleModel, propTransform(glm::vec3(8.0f, 0.01f, -12.0f), 18.0f, 0.22f)));
+    scene.addEntity(new Entity(&pebbleModel, propTransform(glm::vec3(17.0f, -0.10f, -5.0f), -12.0f, 0.16f)));
+    scene.addEntity(new Entity(&pebbleModel, propTransform(glm::vec3(27.0f, -2.09f, -14.0f), 72.0f, 0.18f)));
+    scene.addEntity(new Entity(&pebbleModel, propTransform(glm::vec3(37.0f, -2.53f, -27.0f), -36.0f, 0.24f)));
+    scene.addEntity(new Entity(&pebbleModel, propTransform(glm::vec3(48.0f, -0.72f, -10.0f), 46.0f, 0.15f)));
+    scene.addEntity(new Entity(&pebbleModel, propTransform(glm::vec3(60.0f, -0.52f, -48.0f), -18.0f, 0.20f)));
+    scene.addEntity(new Entity(&boatModel, boatTransform(glm::vec3(37.0f, -2.66f, -31.0f), 18.0f, 5.0f, 6.2f)));
+    scene.addEntity(new Entity(&floorModel, glm::translate(glm::vec3(-10.0f, -3.05f, -70.0f)) * glm::scale(glm::vec3(0.018f, 0.008f, 0.018f))));
+    scene.addEntity(new Entity(&floorModel, glm::translate(glm::vec3(70.0f, -3.05f, -70.0f)) * glm::scale(glm::vec3(0.018f, 0.008f, 0.018f))));
+    scene.addEntity(new Entity(&floorModel, glm::translate(glm::vec3(-10.0f, -3.05f, 10.0f)) * glm::scale(glm::vec3(0.018f, 0.008f, 0.018f))));
+    scene.addEntity(new Entity(&floorModel, glm::translate(glm::vec3(70.0f, -3.05f, 10.0f)) * glm::scale(glm::vec3(0.018f, 0.008f, 0.018f))));
 
     // define depth texture
     DepthMapTexture depth = DepthMapTexture(SHADOW_WIDTH, SHADOW_HEIGHT);

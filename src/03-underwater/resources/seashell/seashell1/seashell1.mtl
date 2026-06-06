@@ -10,6 +10,6 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.450000
 d 1.000000
 illum 2
-map_Bump seashell1_n.png
-map_Kd seashell1_d.png
-map_Ks seashell1_s.png
+map_Bump texture/seashell1_n.png
+map_Kd texture/seashell1_d.png
+map_Ks texture/seashell1_s.png
