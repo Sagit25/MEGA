@@ -36,7 +36,7 @@ const unsigned int SHADOW_HEIGHT = 2048;
 const float planeSize = 15.f;
 
 // camera
-Camera camera(glm::vec3(0.0f, 0.5f, 3.0f));
+Camera camera(glm::vec3(0.0f, 1.5f, 0.0f));
 float lastX = SCR_WIDTH / 2.0f;
 float lastY = SCR_HEIGHT / 2.0f;
 bool firstMouse = true;
@@ -139,18 +139,29 @@ int main()
     Scene scene;
     
 
-    glm::mat4 planeWorldTransform = glm::mat4(1.0f);
-    planeWorldTransform = glm::scale(planeWorldTransform, glm::vec3(planeSize));
-    planeWorldTransform = glm::translate(glm::vec3(0.0f, 0.0f, 0.0f)) * planeWorldTransform;
-    scene.addEntity(new Entity(&grassGroundModel, planeWorldTransform));
+    for (float x = -150.0f + planeSize * 0.5f; x < 150.0f; x += planeSize) {
+        for (float z = -150.0f + planeSize * 0.5f; z < 150.0f; z += planeSize) {
+            glm::mat4 planeWorldTransform = glm::mat4(1.0f);
+            planeWorldTransform = glm::translate(glm::vec3(x, 0.0f, z)) * glm::scale(glm::mat4(1.0f), glm::vec3(planeSize));
+            scene.addEntity(new Entity(&grassGroundModel, planeWorldTransform));
+        }
+    }
 
-    scene.addEntity(new Entity(&fireExtModel, glm::vec3(-1.5f, 0.0f, -2.5f), 0.0f, 180.0f, 0.0f, 0.001f));
-    scene.addEntity(new Entity(&barrelModel, glm::vec3(-2.0f, 0.54f, 5.0f), 0, 0, 0, 0.05f));
-    scene.addEntity(new Entity(&catModel, glm::vec3(3.8f, 0.0f, -5.0f), -90.0f, 0.0f, 0.0f, 0.02f));
-    scene.addEntity(new Entity(&roomModel, glm::vec3(-4.0f, 0.0f, 4.0f), 0.0f, 90.0f, 0.0f, 0.02f));
-    scene.addEntity(new Entity(&houseModel, glm::vec3(2.0f, 0.0f, -4.0f), 0.0f, -90.0f, 0.0f, 1.0f));
-    scene.addEntity(new Entity(&sofaModel, glm::vec3(-0.5f, 0.1f, -3.5f), 0.0f, 0.0f, 0.0f, 0.35f));
-    scene.addEntity(new Entity(&tableModel, glm::vec3(4.5f, 0.0f, -3.0f), 0.0f, 0.0f, 0.0f, 1.2f));
+    const glm::vec3 sceneOffset = glm::vec3(-2.0f, 0.0f, 4.0f);
+    const glm::vec3 housePosition = glm::vec3(2.0f, 0.0f, -4.0f) + sceneOffset;
+    const float furnitureTurnY = 180.0f;
+    auto rotateInHouse = [housePosition](glm::vec3 position) {
+        glm::vec3 local = position - housePosition;
+        return housePosition + glm::vec3(-local.x, local.y, -local.z);
+    };
+
+    scene.addEntity(new Entity(&fireExtModel, rotateInHouse(glm::vec3(-1.5f, 0.0f, -2.5f) + sceneOffset), 0.0f, 180.0f + furnitureTurnY, 0.0f, 0.001f));
+    // scene.addEntity(new Entity(&barrelModel, rotateInHouse(glm::vec3(-2.0f, 0.54f, 5.0f) + sceneOffset), 0, 0 + furnitureTurnY, 0, 0.05f));
+    // scene.addEntity(new Entity(&catModel, rotateInHouse(glm::vec3(3.8f, 0.0f, -5.0f) + sceneOffset), -90.0f, 0.0f + furnitureTurnY, 0.0f, 0.02f));
+    // scene.addEntity(new Entity(&roomModel, rotateInHouse(glm::vec3(-4.0f, 0.0f, 4.0f) + sceneOffset), 0.0f, 90.0f + furnitureTurnY, 0.0f, 0.02f));
+    scene.addEntity(new Entity(&houseModel, housePosition, 0.0f, 90.0f, 0.0f, 1.0f));
+    scene.addEntity(new Entity(&sofaModel, rotateInHouse(glm::vec3(-0.5f, 0.1f, -3.5f) + sceneOffset), 0.0f, 0.0f + furnitureTurnY, 0.0f, 0.5f));
+    scene.addEntity(new Entity(&tableModel, rotateInHouse(glm::vec3(4.5f, 0.0f, -3.0f) + sceneOffset), 0.0f, 0.0f + furnitureTurnY, 0.0f, 1.2f));
 
     // define depth texture
     DepthMapTexture depth = DepthMapTexture(SHADOW_WIDTH, SHADOW_HEIGHT);
@@ -180,7 +191,7 @@ int main()
     skyboxShader.use();
     skyboxShader.setInt("skyboxTexture1", 0);
 
-    DirectionalLight sun(30.0f, 30.0f, glm::vec3(0.8f));
+    DirectionalLight sun(-90.0f, 45.0f, glm::vec3(1.0f));
 
     float oldTime = 0;
     while (!glfwWindowShouldClose(window))// render loop
