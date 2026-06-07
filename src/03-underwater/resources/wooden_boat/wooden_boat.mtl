@@ -1,0 +1,119 @@
+# Blender MTL File: 'Wooden boat.blend'
+# Material Count: 9
+
+newmtl bench_1
+Ns 250.000000
+Ka 1.000000 1.000000 1.000000
+Kd 0.800000 0.800000 0.800000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_bump texture/bench_1_n.png
+map_Kd texture/bench_1_d.png
+map_Ks texture/bench_1_s.png
+
+newmtl bench_2
+Ns 250.000000
+Ka 1.000000 1.000000 1.000000
+Kd 0.800000 0.800000 0.800000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_bump texture/bench_2_n.png
+map_Kd texture/bench_2_d.png
+map_Ks texture/bench_2_s.png
+
+newmtl bench_3
+Ns 250.000000
+Ka 1.000000 1.000000 1.000000
+Kd 0.800000 0.800000 0.800000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_bump texture/bench_3_n.png
+map_Kd texture/bench_3_d.png
+map_Ks texture/bench_3_s.png
+
+newmtl board
+Ns 250.000000
+Ka 1.000000 1.000000 1.000000
+Kd 0.800000 0.800000 0.800000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_bump texture/board_n.png
+map_Kd texture/board_d.png
+map_Ks texture/board_s.png
+
+newmtl body_1
+Ns 250.000000
+Ka 1.000000 1.000000 1.000000
+Kd 0.800000 0.800000 0.800000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_bump texture/body_1_n.png
+map_Kd texture/body_1_d.png
+map_Ks texture/body_1_s.png
+
+newmtl body_2
+Ns 250.000000
+Ka 1.000000 1.000000 1.000000
+Kd 0.800000 0.800000 0.800000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_bump texture/body_2_n.png
+map_Kd texture/body_2_d.png
+map_Ks texture/body_2_s.png
+
+newmtl bottom
+Ns 250.000000
+Ka 1.000000 1.000000 1.000000
+Kd 0.800000 0.800000 0.800000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_bump texture/bottom_n.png
+map_Kd texture/bottom_d.png
+map_Ks texture/bottom_s.png
+
+newmtl paddle_
+Ns 250.000000
+Ka 1.000000 1.000000 1.000000
+Kd 0.800000 0.800000 0.800000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_bump texture/paddle_1_n.png
+map_Kd texture/paddle_1_d.png
+map_Ks texture/paddle_1_s.png
+
+newmtl bow
+Ns 250.000000
+Ka 1.000000 1.000000 1.000000
+Kd 0.800000 0.800000 0.800000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_bump texture/bow_n.png
+map_Kd texture/bow_d.png
+map_Ks texture/bow_s.png
