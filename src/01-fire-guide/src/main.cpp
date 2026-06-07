@@ -51,7 +51,7 @@ const float planeSize = 15.f;
 int framebufferWidth = SCR_WIDTH;
 int framebufferHeight = SCR_HEIGHT;
 
-const glm::vec3 fireSceneOffset = glm::vec3(-4.0f, 0.0f, -40.0f);
+const glm::vec3 fireSceneOffset = glm::vec3(-4.0f, 0.0f, -45.0f);
 const float flightSpeed = 1.5f;
 
 // camera
@@ -169,16 +169,16 @@ glm::mat4 getAirplaneModelMatrix(const Airplane& airplane)
 
 glm::mat4 getToothlessFlightModelMatrix(float time)
 {
-    const float straightDuration = 10.0f;
+    const float straightDuration = 10.0f / 1.5f;
     const float turnDuration = 10.0f;
     const float pi = static_cast<float>(M_PI);
-    const float radiusX = 14.0f;
+    const float radiusX = 28.0f;
     const float radiusZ = 10.0f;
     const float straightStartBackOffset = 10.0f;
     const float turnStartAngle = pi * 0.5f;
     const float bankRoll = glm::radians(14.0f);
 
-    glm::vec3 center = glm::vec3(0.0f, 2.0f, 4.5f) + fireSceneOffset;
+    glm::vec3 center = glm::vec3(0.0f, 2.0f, 0.5f) + fireSceneOffset;
     glm::vec3 turnStartPosition = center + rotateAroundX(
         glm::vec3(std::cos(turnStartAngle) * radiusX, 0.0f, std::sin(turnStartAngle) * radiusZ),
         bankRoll
@@ -251,11 +251,11 @@ struct DragonFlightPose {
 
 DragonFlightPose getDragonFlightPose(float time)
 {
-    const float straightDuration = 12.0f * flightSpeed;
+    const float straightDuration = 12.0f * flightSpeed / 2.0f;
     const float turnDuration = 14.0f;
     const float pi = static_cast<float>(M_PI);
-    const float radiusX = 21.0f;
-    const float radiusZ = 16.6f;
+    const float radiusX = 27.3f;
+    const float radiusZ = 21.6f;
     const float straightStartBackOffset = 10.0f;
     const float turnStartAngle = pi * 0.5f;
     const float bankRoll = glm::radians(12.0f);
@@ -270,7 +270,7 @@ DragonFlightPose getDragonFlightPose(float time)
     const float toothlessTurnRadiusZ = 10.0f;
     const float toothlessBankRoll = glm::radians(14.0f);
     glm::vec3 toothlessTurnStartPosition =
-        glm::vec3(0.0f, -1.0f, 4.5f) + fireSceneOffset
+        glm::vec3(0.0f, -1.0f, 0.5f) + fireSceneOffset
         + rotateAroundX(glm::vec3(0.0f, 0.0f, toothlessTurnRadiusZ), toothlessBankRoll);
     glm::vec3 turnStartPosition = toothlessTurnStartPosition + glm::vec3(0.0f, dragonYOffset, 0.0f);
     glm::vec3 center = turnStartPosition - rotateAroundX(
@@ -399,6 +399,9 @@ int main(int argc, char** argv)
 
 #ifdef __APPLE__
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); 
+    if (offline.enabled) {
+        glfwWindowHint(GLFW_COCOA_RETINA_FRAMEBUFFER, GLFW_FALSE);
+    }
 #endif
 
         // glfw window creation
@@ -433,6 +436,36 @@ int main(int argc, char** argv)
     // configure global opengl state
     // -----------------------------
     glEnable(GL_DEPTH_TEST);
+
+    unsigned int offlineFBO = 0;
+    unsigned int offlineColorTexture = 0;
+    unsigned int offlineDepthRBO = 0;
+    if (offline.enabled) {
+        glGenFramebuffers(1, &offlineFBO);
+        glBindFramebuffer(GL_FRAMEBUFFER, offlineFBO);
+
+        glGenTextures(1, &offlineColorTexture);
+        glBindTexture(GL_TEXTURE_2D, offlineColorTexture);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, SCR_WIDTH, SCR_HEIGHT, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, offlineColorTexture, 0);
+
+        glGenRenderbuffers(1, &offlineDepthRBO);
+        glBindRenderbuffer(GL_RENDERBUFFER, offlineDepthRBO);
+        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, SCR_WIDTH, SCR_HEIGHT);
+        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, offlineDepthRBO);
+
+        if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+            std::cout << "Failed to create offline framebuffer" << std::endl;
+            glfwTerminate();
+            return -1;
+        }
+
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        framebufferWidth = SCR_WIDTH;
+        framebufferHeight = SCR_HEIGHT;
+    }
 
     // build and compile our shader program
     // ------------------------------------
@@ -469,14 +502,14 @@ int main(int argc, char** argv)
     scene.addEntity(new Entity(&sofaModel, rotateInHouse(glm::vec3(-2.5f, 0.1f, 0.5f)), 0.0f, furnitureTurnY, 0.0f, 0.5f));
     scene.addEntity(new Entity(&tableModel, rotateInHouse(glm::vec3(2.5f, 0.0f, 1.0f)), 0.0f, furnitureTurnY, 0.0f, 1.2f));
 
-    Entity* toothlessEntity = new Entity(&toothlessModel, glm::vec3(1.0f, -3.0f, 5.0f) + fireSceneOffset, -90.0f, 180.0f, 0.0f, 0.05f);
+    Entity* toothlessEntity = new Entity(&toothlessModel, glm::vec3(1.0f, -3.0f, 1.0f) + fireSceneOffset, -90.0f, 180.0f, 0.0f, 0.05f);
     scene.addEntity(toothlessEntity);
 
     Entity* dragonEntity = new Entity(&dragonModel, glm::mat4(1.0f));
     scene.addEntity(dragonEntity);
 
-    FireParticleSystem fireParticles(particleShader, 20000);
-    MeteorParticleSystem meteorParticles(particleShader, 10000);
+    FireParticleSystem fireParticles(particleShader, 17000);
+    MeteorParticleSystem meteorParticles(particleShader, 5000);
 
     std::vector<Meteor> meteors;
     const unsigned int maxMeteors = 8;
@@ -553,6 +586,18 @@ int main(int argc, char** argv)
         if (!offline.enabled) {
             processInput(window, &sun);
         }
+        else {
+            float yaw = -90.0f;
+            if (offlineFrameIndex >= 120 && offlineFrameIndex <= 220) {
+                float progress = static_cast<float>(offlineFrameIndex - 120) / 100.0f;
+                yaw = -90.0f - 10.0f * progress;
+            }
+            else if (offlineFrameIndex > 220 && offlineFrameIndex <= 320) {
+                float progress = static_cast<float>(offlineFrameIndex - 220) / 100.0f;
+                yaw = -100.0f + 10.0f * progress;
+            }
+            camera.SetYaw(yaw);
+        }
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         glm::mat4 lightProjection = sun.getProjectionMatrix();
@@ -572,10 +617,10 @@ int main(int argc, char** argv)
                         float meteorX = randomRange(-30.0f, 30.0f);
                         meteor.position = glm::vec3(
                             meteorX,
-                            22.f,
-                            randomRange(-26.0f, -18.0f)
+                            26.f,
+                            randomRange(-31.0f, -23.0f)
                         ) + fireSceneOffset;
-                        float meteorFallSpeed = randomRange(6.8f, 8.6f);
+                        float meteorFallSpeed = randomRange(3.4f, 4.3f);
                         float meteorFallAngle = glm::radians(60.0f);
                         meteor.velocity = glm::vec3(
                             std::cos(meteorFallAngle) * meteorFallSpeed,
@@ -588,7 +633,7 @@ int main(int argc, char** argv)
                             randomRange(-1.0f, 1.0f)
                         ));
                         meteor.rotationAngle = randomRange(0.0f, 6.28f);
-                        meteor.rotationSpeed = randomRange(2.5f, 6.0f);
+                        meteor.rotationSpeed = randomRange(0.835f, 2.0f);
                         meteor.scale = randomRange(0.12f, 0.24f);
                         meteor.entity->modelMatrix = getMeteorModelMatrix(meteor);
                         meteor.entity->visible = true;
@@ -628,12 +673,12 @@ int main(int argc, char** argv)
                 airplane.active = true;
                 airplane.position = glm::vec3(
                     randomRange(-14.0f, 14.0f),
-                    22.f,
-                    randomRange(-38.0f, -20.0f)
+                    26.f,
+                    randomRange(-43.0f, -25.0f)
                 ) + fireSceneOffset;
                 airplane.velocity = glm::vec3(
                     randomRange(-2.8f, 2.8f),
-                    randomRange(-5.0f, -4.0f),
+                    randomRange(-2.5f, -2.0f),
                     randomRange(-2.0f, 2.4f)
                 );
                 airplane.rotation = glm::vec3(
@@ -642,9 +687,9 @@ int main(int argc, char** argv)
                     randomRange(-0.9f, 0.9f)
                 );
                 airplane.angularVelocity = glm::vec3(
-                    randomRange(-0.7f, 0.7f),
-                    randomRange(-0.4f, 0.4f),
-                    randomRange(1.5f, 3.4f)
+                    randomRange(-0.235f, 0.235f),
+                    randomRange(-0.135f, 0.135f),
+                    randomRange(0.5f, 1.135f)
                 );
                 airplane.entity->modelMatrix = getAirplaneModelMatrix(airplane);
                 airplane.entity->visible = true;
@@ -669,7 +714,7 @@ int main(int argc, char** argv)
         }
 
         meteorParticles.Update(deltaTime);
-        flightTime += dt * flightSpeed;
+        flightTime += dt * (flightSpeed / 1.5f) * 0.5f;
 
         glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
         glBindFramebuffer(GL_FRAMEBUFFER, depth.depthMapFBO);
@@ -691,11 +736,22 @@ int main(int argc, char** argv)
             }
         }
 
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
-        int currentWidth, currentHeight;
-        glfwGetFramebufferSize(window, &currentWidth, &currentHeight);
-        framebufferWidth = currentWidth;
-        framebufferHeight = currentHeight;
+        if (offline.enabled) {
+            glBindFramebuffer(GL_FRAMEBUFFER, offlineFBO);
+            framebufferWidth = SCR_WIDTH;
+            framebufferHeight = SCR_HEIGHT;
+        }
+        else {
+            glBindFramebuffer(GL_FRAMEBUFFER, 0);
+            int windowFramebufferWidth = 0;
+            int windowFramebufferHeight = 0;
+            glfwGetFramebufferSize(window, &windowFramebufferWidth, &windowFramebufferHeight);
+            framebufferWidth = windowFramebufferWidth;
+            framebufferHeight = windowFramebufferHeight;
+        }
+
+        int currentWidth = framebufferWidth;
+        int currentHeight = framebufferHeight;
         glViewport(0, 0, currentWidth, currentHeight);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -794,6 +850,9 @@ int main(int argc, char** argv)
         }
     }
 
+    if (offlineColorTexture) glDeleteTextures(1, &offlineColorTexture);
+    if (offlineDepthRBO) glDeleteRenderbuffers(1, &offlineDepthRBO);
+    if (offlineFBO) glDeleteFramebuffers(1, &offlineFBO);
     glfwTerminate();
     return 0;
 }

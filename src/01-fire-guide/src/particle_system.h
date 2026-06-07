@@ -43,7 +43,7 @@ public:
             
             if (p.Life > 0.0f) {
                 float noiseScale = 2.0f;
-                glm::vec3 samplePos = p.Position * noiseScale + glm::vec3(0.0f, time * 2.5f, 0.0f);
+                glm::vec3 samplePos = p.Position * noiseScale + glm::vec3(0.0f, time * 1.25f, 0.0f);
                 
                 // [Feature] Curl Noise
                 glm::vec3 curl = computeCurlNoise(samplePos);
