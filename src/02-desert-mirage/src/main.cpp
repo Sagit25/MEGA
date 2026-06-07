@@ -16,6 +16,12 @@
 #include "model.h"
 #include "mesh.h"
 #include "FreeImage.h"
+#include <algorithm>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <sys/stat.h>
+#include <sys/types.h>
 #include <time.h>
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
@@ -24,6 +30,7 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 void processInput(GLFWwindow* window);
 void initAccumTargets(int width, int height);
 void resizeAccumTargets(int width, int height);
+float getGroundTempAtTime(float renderTime);
 
 bool isWindowed = true;
 bool isKeyboardDone[1024] = { 0 };
@@ -55,6 +62,15 @@ float skyTemp = 20.0f;
 float tempBefore = groundTemp;
 float grouondTemp_Initial = 100.0f;
 
+struct OfflineRenderConfig {
+    bool enabled = false;
+    int fps = 30;
+    int frameCount = 300;
+    int tileSize = 128;
+    float startTime = 10.0f;
+    const char* outputDir = "offline_frames";
+};
+
 void test()
 {
     std::cout << groundTemp << std::endl;
@@ -78,15 +94,69 @@ void saveImage(const char* filename) {
     delete[] pixels;
 }
 
-int main()
+float getGroundTempAtTime(float renderTime)
+{
+    const float initialGroundTemp = 210.0f;
+    const float minimumGroundTemp = 20.0f;
+    const float transitionStart = 10.0f;
+    const float transitionSpeed = 20.0f;
+
+    if (renderTime < transitionStart) {
+        return initialGroundTemp;
+    }
+
+    float cooledTemp = initialGroundTemp - transitionSpeed * (renderTime - transitionStart);
+    return std::max(cooledTemp, minimumGroundTemp);
+}
+
+void createDirectoryIfNeeded(const char* path)
+{
+    mkdir(path, 0755);
+}
+
+int main(int argc, char** argv)
 {
     std::cout << "Current main.cpp: hw5_real_final" << std::endl;
+
+    OfflineRenderConfig offline;
+    for (int i = 1; i < argc; ++i) {
+        if (std::strcmp(argv[i], "--offline") == 0) {
+            offline.enabled = true;
+        }
+        else if (std::strcmp(argv[i], "--fps") == 0 && i + 1 < argc) {
+            offline.fps = std::max(1, std::atoi(argv[++i]));
+        }
+        else if (std::strcmp(argv[i], "--frames") == 0 && i + 1 < argc) {
+            offline.frameCount = std::max(1, std::atoi(argv[++i]));
+        }
+        else if (std::strcmp(argv[i], "--tile-size") == 0 && i + 1 < argc) {
+            offline.tileSize = std::max(16, std::atoi(argv[++i]));
+        }
+        else if (std::strcmp(argv[i], "--start-time") == 0 && i + 1 < argc) {
+            offline.startTime = std::max(0.0f, static_cast<float>(std::atof(argv[++i])));
+        }
+        else if (std::strcmp(argv[i], "--output") == 0 && i + 1 < argc) {
+            offline.outputDir = argv[++i];
+        }
+    }
+    if (offline.enabled) {
+        createDirectoryIfNeeded(offline.outputDir);
+        std::cout << "Offline rendering: " << offline.frameCount
+                  << " frames at " << offline.fps
+                  << " fps from t=" << offline.startTime
+                  << ", tile " << offline.tileSize
+                  << " -> " << offline.outputDir << std::endl;
+    }
+
     // glfw: initialize and configure
     // ------------------------------
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    if (offline.enabled) {
+        glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
+    }
 
 #ifdef __APPLE__
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); // uncomment this statement to fix compilation on OS X
@@ -104,11 +174,13 @@ int main()
     glfwMakeContextCurrent(window);
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
-    glfwSetCursorPosCallback(window, mouse_callback);
-    glfwSetScrollCallback(window, scroll_callback);
+    if (!offline.enabled) {
+        glfwSetCursorPosCallback(window, mouse_callback);
+        glfwSetScrollCallback(window, scroll_callback);
 
-    // tell GLFW to capture our mouse
-    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+        // tell GLFW to capture our mouse
+        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    }
 
     // glad: load all OpenGL function pointers
     // ---------------------------------------
@@ -166,7 +238,6 @@ int main()
 
     // [Project] Texture added
     Texture objectTex("../resources/pyramid/sandstone_diff.jpg");
-    Texture rockTex("../resources/pyramid/rock_diff.jpg");
     Texture groundTex("../resources/pyramid/desert_sand_floor.jpg");
 
     unsigned int vs_ubo = glGetUniformBlockIndex(rayTracingShader.ID, "mesh_vertices_ubo");
@@ -184,44 +255,39 @@ int main()
     rayTracingShader.setInt("skybox", 0);
     rayTracingShader.setInt("groundTexture", 2);
     rayTracingShader.setInt("objectTexture", 3);
-    rayTracingShader.setInt("rockTexture", 4);
 
     // Set materials. You can change this.
     rayTracingShader.setVec3("material_ground.albedo", glm::vec3(0.8, 0.8, 0.0));
-    rayTracingShader.setInt("material_sphere_middle.material_type", 0); // diffuse
 
     rayTracingShader.setVec3("material_sphere_middle.albedo", glm::vec3(0.3, 0.3, 0.8));
     rayTracingShader.setInt("material_sphere_middle.material_type", 0); // diffuse
-
-    rayTracingShader.setVec3("material_sphere_left.albedo", glm::vec3(0.8, 0.8, 0.8));
-    rayTracingShader.setInt("material_sphere_left.material_type", 2); // refractive
-    rayTracingShader.setFloat("material_sphere_left.ior", 1.5f);
-    rayTracingShader.setFloat("material_sphere_left.fuzz", 0.3f);
-
-    rayTracingShader.setVec3("material_inside_left.albedo", glm::vec3(0.9, 0.9, 1.0));
-    rayTracingShader.setInt("material_inside_left.material_type", 2); // refractive
-    rayTracingShader.setFloat("material_inside_left.ior", 1.0f / 1.5f);
-    rayTracingShader.setFloat("material_inside_left.fuzz", 0.3f);
-
-    rayTracingShader.setVec3("material_sphere_right.albedo", glm::vec3(0.8, 0.6, 0.2));
-    rayTracingShader.setInt("material_sphere_right.material_type", 1); // reflective
-    rayTracingShader.setFloat("material_sphere_right.fuzz", 1.0f);
 
     glm::mat4 viewMatBefore = camera.GetViewMatrix();
     float zoomBefore = camera.Zoom;
 
     // Added: For quick camera movement
     float lastFrame = glfwGetTime();
+    int offlineFrameIndex = 0;
 
     while (!glfwWindowShouldClose(window))// render loop
     {
         // For quick camera movement
-        float currentFrame = glfwGetTime();
-        deltaTime = currentFrame - lastFrame;
-        lastFrame = currentFrame;
+        float currentFrame = offline.enabled
+            ? offline.startTime + static_cast<float>(offlineFrameIndex) / static_cast<float>(offline.fps)
+            : static_cast<float>(glfwGetTime());
+        if (offline.enabled) {
+            deltaTime = 1.0f / static_cast<float>(offline.fps);
+        }
+        else {
+            deltaTime = currentFrame - lastFrame;
+            lastFrame = currentFrame;
+        }
 
         // [Project] Animate temperature change
-        if (currentFrame >= 10.0f /*Starting time*/ && groundTemp > 20.0f) {
+        if (offline.enabled) {
+            groundTemp = getGroundTempAtTime(currentFrame);
+        }
+        else if (currentFrame >= 10.0f /*Starting time*/ && groundTemp > 20.0f) {
             float transitionSpeed = 20.0f; // Speed in temperature decay
             groundTemp -= transitionSpeed * deltaTime;
 
@@ -241,7 +307,8 @@ int main()
         // Temperature
         rayTracingShader.setFloat("groundTemp", groundTemp);
         rayTracingShader.setFloat("skyTemp", skyTemp);
-        rayTracingShader.setFloat("time", glfwGetTime());
+        float noiseTime = currentFrame;
+        rayTracingShader.setFloat("time", noiseTime);
 
         
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -256,21 +323,54 @@ int main()
 
         glActiveTexture(GL_TEXTURE3);
         glBindTexture(GL_TEXTURE_2D, objectTex.ID);
-
-        glActiveTexture(GL_TEXTURE4);
-        glBindTexture(GL_TEXTURE_2D, rockTex.ID);
         // --
 
         glBindVertexArray(quad->ID);
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+        if (offline.enabled) {
+            glEnable(GL_SCISSOR_TEST);
+            for (int y = 0; y < framebufferHeight; y += offline.tileSize) {
+                int tileHeight = std::min(offline.tileSize, framebufferHeight - y);
+                for (int x = 0; x < framebufferWidth; x += offline.tileSize) {
+                    int tileWidth = std::min(offline.tileSize, framebufferWidth - x);
+                    glScissor(x, y, tileWidth, tileHeight);
+                    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+                    glFinish();
+                    glfwPollEvents();
+                }
+            }
+            glDisable(GL_SCISSOR_TEST);
+        }
+        else {
+            glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+        }
 
         // input
-        processInput(window);
+        if (offline.enabled) {
+            glFinish();
 
-        // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
-        // -------------------------------------------------------------------------------
-        glfwSwapBuffers(window);
-        glfwPollEvents();
+            char filename[256];
+            std::snprintf(filename, sizeof(filename), "%s/frame_%04d.png", offline.outputDir, offlineFrameIndex);
+            saveImage(filename);
+
+            if (offlineFrameIndex % offline.fps == 0) {
+                std::cout << "Saved " << filename << std::endl;
+            }
+
+            ++offlineFrameIndex;
+            if (offlineFrameIndex >= offline.frameCount) {
+                glfwSetWindowShouldClose(window, true);
+            }
+        }
+        else {
+            processInput(window);
+        }
+
+        if (!offline.enabled) {
+            // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
+            // -------------------------------------------------------------------------------
+            glfwSwapBuffers(window);
+            glfwPollEvents();
+        }
     }
 
     // optional: de-allocate all resources once they've outlived their purpose:
@@ -321,7 +421,7 @@ void processInput(GLFWwindow* window)
         time_t t = time(NULL);
         struct tm tm = *localtime(&t);
         char date_char[128];
-        sprintf(date_char, "%d_%d_%d_%d_%d_%d.png", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
+        std::snprintf(date_char, sizeof(date_char), "%d_%d_%d_%d_%d_%d.png", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
         saveImage(date_char);
         isKeyboardDone[GLFW_KEY_V] = true;
     }

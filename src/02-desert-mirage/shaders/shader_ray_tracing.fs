@@ -17,7 +17,6 @@ uniform bool displayOnly;
 // [Project] Texture
 uniform samplerCube skybox;
 uniform sampler2D objectTexture;
-uniform sampler2D rockTexture;
 uniform sampler2D groundTexture;
 
 
@@ -46,22 +45,7 @@ const int mat_refractive = 2;
 
 // Just consider Light as a fixed environment light
 
-// hit information
-struct HitRecord {
-    float t;        // distance to hit point
-    vec3 p;         // hit point
-    vec3 normal;    // hit point normal
-    bool frontFace; // whether the ray hits the front face
-    Material mat;   // hit point material
-};
-
 // Geometry
-struct Sphere {
-    vec3 center;
-    float radius;
-    Material mat;
-};
-
 struct Pyramid {
     vec3 center;
     float size;
@@ -70,23 +54,11 @@ struct Pyramid {
 
 uniform Material material_ground;
 uniform Material material_sphere_middle;
-uniform Material material_sphere_left;
-uniform Material material_sphere_right;
-uniform Material material_inside_left;
-
-Sphere spheres[] = Sphere[](
-    // Sphere(vec3(0, -100.5, -1), 100, material_ground),
-    Sphere(vec3(6.0, 13.0, -20), 0.9, material_sphere_middle),
-    Sphere(vec3(2.0, 12.0, -20), 0.6, material_sphere_middle),
-    Sphere(vec3(-4.5, 12.0, -20), 0.8, material_sphere_middle)
-    // Sphere(vec3(3, 1.5, -9), 1.0, material_sphere_middle)
-    // Sphere(vec3(-1, 0.5, -10), 0.4, material_inside_left)
-);
 
 Pyramid pyramids[] = Pyramid[](
-    Pyramid(vec3(0.0, 16.0, -25.0), 1.5, material_sphere_middle),
-    Pyramid(vec3(-10.0, 12.0, -18.0), 0.9, material_sphere_middle),
-    Pyramid(vec3(11.5, 13.0, -20.0), 1.2, material_sphere_middle)
+    Pyramid(vec3(0.0, -0.35, -24.0), 3.5, material_sphere_middle),
+    Pyramid(vec3(-6.4, -0.35, -27.0), 2.35, material_sphere_middle),
+    Pyramid(vec3(6.8, -0.35, -29.0), 2.55, material_sphere_middle)
 );
 
 //float rand(vec2 co) {
@@ -124,44 +96,6 @@ Ray getRay(vec2 uv){
     return r;
 }
 
-const float bias = 0.0001; // to prevent point too close to surface.
-
-bool sphereIntersect(Sphere sp, Ray r, inout HitRecord hit){
-    // TODO
-    vec3 oc = sp.center - r.origin;
-    float a = dot(r.direction, r.direction);
-    float b = -2.0 * dot(r.direction, oc);
-    float c = dot(oc, oc) - sp.radius * sp.radius;
-    float disc = b*b - 4*a*c;
-
-    if (disc < 0) {
-        return false;
-    }
-
-    float sqrtD = sqrt(disc);
-    float sol = (-b - sqrtD) / (a * 2.0);
-
-    if (sol < bias || sol > hit.t) {
-        sol = (-b + sqrtD) / (a * 2.0);
-
-        if(sol < bias || sol > hit.t){
-            return false;
-        }
-    }
-
-    hit.t = sol;
-    hit.p = r.origin + sol * r.direction;
-
-    vec3 n = normalize(hit.p - sp.center);
-
-    hit.frontFace = dot(r.direction, n) < 0.0;
-    hit.normal = hit.frontFace ? n : (-n);
-
-    hit.mat = sp.mat;
-
-    return true;
-}
-
 mat3 rotX(float angle) {
     float c = cos(angle);
     float s = sin(angle);
@@ -173,6 +107,37 @@ mat3 rotX(float angle) {
 }
 
 const float pyramidRotX = 40.0;
+
+bool checkPyramid(vec3 p, Pyramid pyr, out vec3 normal) {
+    vec3 localP = p - pyr.center;
+    float halfBase = pyr.size;
+    float height = pyr.size * 1.45;
+
+    if (localP.y < 0.0 || localP.y > height) {
+        return false;
+    }
+
+    float slope = halfBase / height;
+    float halfWidth = halfBase * (1.0 - localP.y / height);
+    float sideX = halfWidth - abs(localP.x);
+    float sideZ = halfWidth - abs(localP.z);
+
+    if (sideX < 0.0 || sideZ < 0.0) {
+        return false;
+    }
+
+    if (localP.y < min(sideX, sideZ) && localP.y < 0.08) {
+        normal = vec3(0.0, -1.0, 0.0);
+    }
+    else if (sideX < sideZ) {
+        normal = normalize(vec3(sign(localP.x), slope, 0.0));
+    }
+    else {
+        normal = normalize(vec3(0.0, slope, sign(localP.z)));
+    }
+
+    return true;
+}
 
 bool checkDownwardPyramid(vec3 p, Pyramid pyr, out vec3 normal) {
     vec3 localP = p - pyr.center;
@@ -212,81 +177,28 @@ bool checkDownwardPyramid(vec3 p, Pyramid pyr, out vec3 normal) {
 
 const float texScale = 0.2; // Texture size scaling
 
-bool checkHitVolume(vec3 p, out Material hitMat, out vec3 hitNormal, out vec2 hitUV, out int hitObjType) {
-    // Ground
-    if (p.y <= groundHeight) {
-        hitMat = material_ground;
-        hitNormal = vec3(0.0, 1.0, 0.0);
-        hitUV = fract(p.xz * texScale);
-        hitObjType = 0;
-        return true;
-    }
-
-    // Spheres
-    for (int i = 0; i < spheres.length(); i++) {
-        if (length(p - spheres[i].center) <= spheres[i].radius) {
-            hitMat = spheres[i].mat;
-            hitNormal = normalize(p - spheres[i].center);
-
-            float baseU = 0.5 + atan(hitNormal.z, hitNormal.x) / (2.0 * PI);
-            float baseV = 0.5 - asin(hitNormal.y) / PI;
-
-            float sphereTexScale = 2.0;
-
-            hitUV.x = baseU * (2.0 * sphereTexScale);
-            hitUV.y = baseV * sphereTexScale;
-
-            hitUV = fract(hitUV);
-
-            hitObjType = 2;
-            return true;
-        }
-    }
-
-
-    // Added: Tetrahedrons!
-    //for (int i = 0; i < tetras.length(); i++) {
-    //    vec3 tetNormal;
-    //    if (checkTetra(p, tetras[i], tetNormal)) {
-    //        hitMat = tetras[i].mat;
-    //        hitNormal = tetNormal;
-    //        hitUV = vec2(0.5); // default value for now
-    //        hitObjType = 1;
-    //        return true;
-    //    }
-    //}
-
-    // Pyramid
+bool checkObjectHitVolume(vec3 p, out Material hitMat, out vec3 hitNormal, out vec2 hitUV, out int hitObjType) {
     for (int i = 0; i < pyramids.length(); i++) {
         vec3 pyrNormal;
-        if (checkDownwardPyramid(p, pyramids[i], pyrNormal)) {
+        if (checkPyramid(p, pyramids[i], pyrNormal)) {
             hitMat = pyramids[i].mat;
             hitNormal = pyrNormal;
 
             vec3 localP = p - pyramids[i].center;
-
-            mat3 rX = rotX(radians(pyramidRotX));
-            vec3 rotatedLocalP = rX * localP;
-            vec3 localNormal = rX * pyrNormal;
-
-            float objTexScale = 0.8;
-            float rootTwo = 1.4142;
+            float objTexScale = 0.45;
 
             hitUV = vec2(1.0);
-            if (localNormal.y > 0.5) {
-                // Base face: normal is y-axis -> XZ plane
-                hitUV.x = rotatedLocalP.x * objTexScale;
-                hitUV.y = rotatedLocalP.z * objTexScale;
+            if (pyrNormal.y < -0.5) {
+                hitUV.x = localP.x * objTexScale;
+                hitUV.y = localP.z * objTexScale;
             }
-            else if (abs(localNormal.x) > abs(localNormal.z)) {
-                // X-sidal face -> ZY plane
-                hitUV.x = rotatedLocalP.z * sign(localNormal.x) * objTexScale;
-                hitUV.y = rotatedLocalP.y * rootTwo * objTexScale;
+            else if (abs(pyrNormal.x) > abs(pyrNormal.z)) {
+                hitUV.x = localP.z * sign(pyrNormal.x) * objTexScale;
+                hitUV.y = localP.y * objTexScale;
             }
             else {
-                // Z-sidal face -> XY plane
-                hitUV.x = rotatedLocalP.x * sign(localNormal.z) * -1.0 * objTexScale;
-                hitUV.y = rotatedLocalP.y * rootTwo * objTexScale;
+                hitUV.x = localP.x * sign(pyrNormal.z) * -1.0 * objTexScale;
+                hitUV.y = localP.y * objTexScale;
             }
             hitUV = fract(hitUV);
 
@@ -296,6 +208,137 @@ bool checkHitVolume(vec3 p, out Material hitMat, out vec3 hitNormal, out vec2 hi
     }
 
     return false;
+}
+
+bool checkHitVolume(vec3 p, out Material hitMat, out vec3 hitNormal, out vec2 hitUV, out int hitObjType) {
+    if (checkObjectHitVolume(p, hitMat, hitNormal, hitUV, hitObjType)) {
+        return true;
+    }
+
+    if (p.y <= groundHeight) {
+        hitMat = material_ground;
+        hitNormal = vec3(0.0, 1.0, 0.0);
+        hitUV = fract(p.xz * texScale);
+        hitObjType = 0;
+        return true;
+    }
+
+    return false;
+}
+
+vec3 shadeSceneHit(int hitObjType, vec3 hitNormal, vec2 hitUV) {
+    vec3 texColor = vec3(0.0);
+
+    if (hitObjType == 0) {
+        texColor = texture(groundTexture, hitUV).rgb;
+    }
+    else if (hitObjType == 1) {
+        texColor = mix(texture(objectTexture, hitUV).rgb, vec3(0.95, 0.54, 0.22), 0.12);
+    }
+
+    vec3 lightDir = normalize(vec3(0.5, 1.0, 0.5));
+    float diff = max(dot(hitNormal, lightDir), 0.2);
+
+    return texColor * diff;
+}
+
+vec3 traceObjectOrSky(vec3 origin, vec3 direction) {
+    vec3 p = origin;
+    vec3 dir = normalize(direction);
+    float reflectionStep = 0.08;
+
+    for (int i = 0; i < 520; i++) {
+        Material hitMat;
+        vec3 hitNormal;
+        vec2 hitUV;
+        int hitObjType;
+
+        if (checkObjectHitVolume(p, hitMat, hitNormal, hitUV, hitObjType)) {
+            return shadeSceneHit(hitObjType, hitNormal, hitUV);
+        }
+
+        if (p.y > skyHeight) {
+            return texture(skybox, dir).rgb;
+        }
+
+        p += dir * reflectionStep;
+    }
+
+    return texture(skybox, dir).rgb;
+}
+
+vec3 shadeMirageGround(vec3 position, vec3 viewDir, vec2 groundUV) {
+    vec3 groundColor = texture(groundTexture, groundUV).rgb;
+
+    float heatAmount = clamp((groundTemp - skyTemp) / 190.0, 0.0, 1.0);
+    float depth = -position.z;
+    float distanceBand = smoothstep(1.0, 3.0, depth) * (1.0 - smoothstep(14.0, 24.0, depth));
+    float grazingRay = 1.0 - smoothstep(0.05, 0.38, abs(viewDir.y));
+    float mirageMask = heatAmount * distanceBand * grazingRay;
+
+    vec3 reflectionDir = reflect(normalize(viewDir), vec3(0.0, 1.0, 0.0));
+    float ripple =
+        sin(position.x * 7.0 + time * 2.1) * 0.5 +
+        sin(position.z * 4.0 + position.x * 1.7 - time * 1.6) * 0.5;
+    reflectionDir.x += ripple * 0.018 * mirageMask;
+    reflectionDir.y += sin(position.x * 4.2 + position.z * 2.3 + time) * 0.006 * mirageMask;
+    reflectionDir = normalize(reflectionDir);
+
+    vec3 reflectionColor = traceObjectOrSky(position + vec3(0.0, 0.04, 0.0), reflectionDir);
+    reflectionColor = mix(reflectionColor, vec3(0.70, 0.78, 0.88), 0.08);
+
+    float reflectStrength = 0.78 * mirageMask;
+    return mix(groundColor, reflectionColor, reflectStrength);
+}
+
+float rectMask(vec2 p, vec2 minPoint, vec2 size) {
+    vec2 inside = step(minPoint, p) * step(p, minPoint + size);
+    return inside.x * inside.y;
+}
+
+vec3 drawTemperatureUI(vec3 sceneColor) {
+    vec2 p = vec2(TexCoords.x * W, (1.0 - TexCoords.y) * H);
+    float screenScale = clamp(H / 900.0, 0.85, 1.45);
+    float uiScale = screenScale * 0.5;
+
+    vec2 barMin = vec2(46.0, 42.0) * screenScale;
+    vec2 barSize = vec2(30.0, 210.0) * uiScale;
+    float border = max(1.5, 3.0 * uiScale);
+    vec3 frameColor = vec3(0.43, 0.47, 0.51);
+    vec3 markerColor = vec3(0.36, 0.39, 0.43);
+
+    float outerMask = rectMask(p, barMin, barSize);
+    vec2 innerMin = barMin + vec2(border);
+    vec2 innerSize = barSize - vec2(border * 2.0);
+    float innerMask = rectMask(p, innerMin, innerSize);
+
+    vec3 color = sceneColor;
+    if (outerMask > 0.5) {
+        color = frameColor;
+    }
+    if (innerMask > 0.5) {
+        float barT = 1.0 - clamp((p.y - innerMin.y) / innerSize.y, 0.0, 1.0);
+        vec3 coldColor = vec3(0.45, 0.63, 0.88);
+        vec3 midColor = vec3(0.82, 0.73, 0.83);
+        vec3 hotColor = vec3(0.94, 0.48, 0.42);
+        color = barT < 0.5
+            ? mix(coldColor, midColor, barT * 2.0)
+            : mix(midColor, hotColor, (barT - 0.5) * 2.0);
+    }
+
+    float tempT = clamp((groundTemp - 20.0) / 190.0, 0.0, 1.0);
+    float markerY = innerMin.y + (1.0 - tempT) * innerSize.y - max(1.0, border * 0.65);
+    float markerLength = 24.0 * uiScale;
+    float markerThickness = max(1.5, 3.0 * uiScale);
+    vec2 markerMin = vec2(barMin.x - markerLength, markerY - markerThickness * 0.5);
+    vec2 markerSize = vec2(markerLength + border, markerThickness);
+    float markerMask = rectMask(p, markerMin, markerSize);
+
+    if (markerMask > 0.5) {
+        color = markerColor;
+    }
+
+    return color;
 }
 
 
@@ -476,24 +519,11 @@ vec3 rayMarch(Ray ray) {
 
         // Replaced trace() with checkHitVolume()
         if (checkHitVolume(currentPos, hitMat, hitNormal, hitUV, hitObjType)) {
-
-            vec3 texColor = vec3(0.0);
-            vec2 uv = vec2(0.0);
-
-            if (hitObjType == 0) { // ground
-                texColor = texture(groundTexture, hitUV).rgb;
-            }
-            else if (hitObjType == 1) { // object(Pyramid)
-                texColor = texture(objectTexture, hitUV).rgb;
-            }
-            else if (hitObjType == 2) { // object(Sphere)
-                texColor = texture(rockTexture, hitUV).rgb;
+            if (hitObjType == 0) {
+                return shadeMirageGround(currentPos, currentDir, hitUV);
             }
 
-            vec3 lightDir = normalize(vec3(0.5, 1.0, 0.5));
-            float diff = max(dot(hitNormal, lightDir), 0.2);
-
-            return texColor * diff;
+            return shadeSceneHit(hitObjType, hitNormal, hitUV);
         }
 
         if (currentPos.y > skyHeight) {
@@ -510,20 +540,6 @@ vec3 rayMarch(Ray ray) {
             }
         }
 
-        float currentIOR = getIOR(getTemperature(currentPos));
-        vec3 gradient = getIORGradient(currentPos);
-
-        // --- Core: Mirage amplification & application of the correct light-bending formula ---
-        // Artificially amplify the refraction effect by 10x–20x to make the result visible in a confined space
-        float mirageStrength = 2.0;
-
-
-        // Eikonal equation approximation: only the gradient component perpendicular
-        // to the propagation direction causes the light ray to bend.
-        vec3 perpGrad = gradient - currentDir * dot(currentDir, gradient);
-        currentDir = currentDir + (perpGrad / currentIOR) * stepSize * mirageStrength;
-        currentDir = normalize(currentDir);
-
         currentPos += currentDir * stepSize;
     }
 
@@ -536,7 +552,7 @@ void main()
 {
     // 1. Pass for screen output (Same as origin)
     if (displayOnly) {
-        FragColor = texture(accumPrev, TexCoords);
+        FragColor = vec4(drawTemperatureUI(texture(accumPrev, TexCoords).rgb), 1.0);
         return;
     }
 
@@ -558,6 +574,7 @@ void main()
     float maxAccumulationFrames = 100.0;
     float w = 1.0 / min(float(frameCountWithoutMove + 1.0), maxAccumulationFrames);
     color = (1.0 - w) * prevColor + w * color;
+    color = drawTemperatureUI(color);
 
     FragColor = vec4(color, 1.0);
 }
