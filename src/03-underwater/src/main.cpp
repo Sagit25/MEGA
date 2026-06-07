@@ -33,14 +33,14 @@ bool isWindowed = true;
 bool isKeyboardDone[1024] = { 0 };
 
 // setting
-const unsigned int SCR_WIDTH = 800;
-const unsigned int SCR_HEIGHT = 600;
+const unsigned int SCR_WIDTH = 1920;
+const unsigned int SCR_HEIGHT = 1080;
 const unsigned int SHADOW_WIDTH = 2048;
 const unsigned int SHADOW_HEIGHT = 2048;
 const float planeSize = 15.f;
 
 // camera
-Camera camera(glm::vec3(0.0f, 2.0f, 0.0f));
+Camera camera(glm::vec3(0.0f, 1.5f, 0.5f));
 float lastX = SCR_WIDTH / 2.0f;
 float lastY = SCR_HEIGHT / 2.0f;
 bool firstMouse = true;
@@ -130,6 +130,9 @@ int main()
     Model boatModel = Model("../resources/wooden_boat/wooden_boat.obj");
 
     Model floorModel = Model("../resources/mountain/mountain.obj", true);
+    Model houseModel = Model("../../00-main/resources/room/Warehouse.obj");
+    Model sofaModel = Model("../../00-main/resources/sofa/sofa.obj");
+    Model tableModel = Model("../../00-main/resources/table/Center Table.obj");
 
     // Add entities to scene.
     // you can change the position/orientation.
@@ -167,6 +170,16 @@ int main()
         transform = glm::rotate(transform, glm::radians(pitch), glm::vec3(1.0f, 0.0f, 0.0f));
         return glm::scale(transform, glm::vec3(scale));
     };
+    const glm::vec3 housePosition = glm::vec3(0.0f, 0.0f, 0.0f);
+    const float furnitureTurnY = 180.0f;
+    auto rotateInHouse = [housePosition](glm::vec3 position) {
+        glm::vec3 local = position - housePosition;
+        return housePosition + glm::vec3(-local.x, local.y, -local.z);
+    };
+
+    scene.addEntity(new Entity(&houseModel, housePosition, 0.0f, -90.0f + furnitureTurnY, 0.0f, 1.0f));
+    scene.addEntity(new Entity(&sofaModel, rotateInHouse(glm::vec3(-2.5f, 0.1f, 0.5f)), 0.0f, furnitureTurnY, 0.0f, 0.5f));
+    scene.addEntity(new Entity(&tableModel, rotateInHouse(glm::vec3(2.5f, 0.0f, 1.0f)), 0.0f, furnitureTurnY, 0.0f, 1.2f));
 
     scene.addEntity(new Entity(&shellModel, propTransform(glm::vec3(-7.6f, -1.05f, -24.0f), -26.0f, -8.0f, 14.0f, 0.28f)));
     scene.addEntity(new Entity(&shellModel, propTransform(glm::vec3(-6.2f, -1.04f, -25.5f), 24.0f, 6.0f, -18.0f, 0.34f)));
@@ -234,12 +247,14 @@ int main()
     lightingShader.setInt("depthMapSampler", 3);
     lightingShader.setInt("causticSampler", 5);
     lightingShader.setFloat("material.shininess", 64.f);    // set shininess to constant value.
+    lightingShader.setVec2("houseEffectMin", -6.0f, -4.0f);
+    lightingShader.setVec2("houseEffectMax", 6.0f, 4.0f);
 
     const int causticFrameCount = 32;
     const char* causticFrameDirectory = "../resources/caustics/caustic_frames";
     CausticTexture causticTexture(causticFrameDirectory, causticFrameCount);
 
-    DirectionalLight sun(90.0f, 30.0f, glm::vec3(0.8f));
+    DirectionalLight sun(-90.0f, 45.0f, glm::vec3(0.8f));
 
     float oldTime = 0;
     while (!glfwWindowShouldClose(window))// render loop

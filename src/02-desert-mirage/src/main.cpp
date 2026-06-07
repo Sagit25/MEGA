@@ -307,7 +307,7 @@ int main(int argc, char** argv)
         // Temperature
         rayTracingShader.setFloat("groundTemp", groundTemp);
         rayTracingShader.setFloat("skyTemp", skyTemp);
-        float noiseTime = currentFrame;
+        float noiseTime = currentFrame * 0.5f;
         rayTracingShader.setFloat("time", noiseTime);
 
         

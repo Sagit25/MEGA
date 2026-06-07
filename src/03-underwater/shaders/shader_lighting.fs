@@ -37,6 +37,8 @@ const float waterFogDensity = 0.007;
 uniform sampler2DArray causticSampler;
 uniform float currentTime;
 uniform float causticFrameCount;
+uniform vec2 houseEffectMin;
+uniform vec2 houseEffectMax;
 
 const float causticStrength = 0.85;
 const float causticFrameRate = 18.0;
@@ -106,6 +108,12 @@ vec3 ApplyUnderwaterColor(vec3 litColor)
     vec3 absorbedColor = litColor * absorption;
 
     return mix(absorbedColor, waterColor, clamp(fogAmount, 0.0, 0.42));
+}
+
+bool IsHouseArea(vec3 position)
+{
+    return position.x >= houseEffectMin.x && position.x <= houseEffectMax.x
+        && position.z >= houseEffectMin.y && position.z <= houseEffectMax.y;
 }
 
 float CausticLight(vec3 position, vec3 normal)
@@ -190,9 +198,12 @@ void main()
         }
 	}
 
-    float caustic = CausticLight(FragPos, normal);
-    vec3 causticColor = mix(vec3(1.0), waterColor, 0.35);
-    totalColor += causticColor * light.color * caustic * causticStrength;
-	
-    FragColor = vec4(ApplyUnderwaterColor(totalColor), 1.0);
+    bool houseArea = IsHouseArea(FragPos);
+    if (!houseArea) {
+        float caustic = CausticLight(FragPos, normal);
+        vec3 causticColor = mix(vec3(1.0), waterColor, 0.35);
+        totalColor += causticColor * light.color * caustic * causticStrength;
+    }
+		
+    FragColor = vec4(houseArea ? totalColor : ApplyUnderwaterColor(totalColor), 1.0);
 }
