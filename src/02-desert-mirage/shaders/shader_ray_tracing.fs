@@ -56,9 +56,9 @@ uniform Material material_ground;
 uniform Material material_sphere_middle;
 
 Pyramid pyramids[] = Pyramid[](
-    Pyramid(vec3(0.0, -0.35, -24.0), 3.5, material_sphere_middle),
-    Pyramid(vec3(-6.4, -0.35, -27.0), 2.35, material_sphere_middle),
-    Pyramid(vec3(6.8, -0.35, -29.0), 2.55, material_sphere_middle)
+    Pyramid(vec3(0.0, -0.5, -24.0), 3.5, material_sphere_middle),
+    Pyramid(vec3(-6.4, -0.5, -27.0), 2.35, material_sphere_middle),
+    Pyramid(vec3(6.8, -0.5, -29.0), 2.55, material_sphere_middle)
 );
 
 //float rand(vec2 co) {
@@ -78,6 +78,12 @@ uniform float skyTemp;
 
 const float groundHeight = -0.5;
 const float skyHeight = 50.0;
+const float IOR_BEND_STRENGTH = 1.15;
+const float IOR_GRADIENT_LIMIT = 0.8;
+const float MIRAGE_DEPTH_START = 12.0;
+const float MIRAGE_DEPTH_FULL = 20.0;
+const float MIRAGE_DEPTH_END = 34.0;
+const float MIRAGE_LAYER_HEIGHT = 1.4;
 
 Ray getRay(vec2 uv){
     // TODO
@@ -242,55 +248,6 @@ vec3 shadeSceneHit(int hitObjType, vec3 hitNormal, vec2 hitUV) {
     return texColor * diff;
 }
 
-vec3 traceObjectOrSky(vec3 origin, vec3 direction) {
-    vec3 p = origin;
-    vec3 dir = normalize(direction);
-    float reflectionStep = 0.08;
-
-    for (int i = 0; i < 520; i++) {
-        Material hitMat;
-        vec3 hitNormal;
-        vec2 hitUV;
-        int hitObjType;
-
-        if (checkObjectHitVolume(p, hitMat, hitNormal, hitUV, hitObjType)) {
-            return shadeSceneHit(hitObjType, hitNormal, hitUV);
-        }
-
-        if (p.y > skyHeight) {
-            return texture(skybox, dir).rgb;
-        }
-
-        p += dir * reflectionStep;
-    }
-
-    return texture(skybox, dir).rgb;
-}
-
-vec3 shadeMirageGround(vec3 position, vec3 viewDir, vec2 groundUV) {
-    vec3 groundColor = texture(groundTexture, groundUV).rgb;
-
-    float heatAmount = clamp((groundTemp - skyTemp) / 190.0, 0.0, 1.0);
-    float depth = -position.z;
-    float distanceBand = smoothstep(1.0, 3.0, depth) * (1.0 - smoothstep(14.0, 24.0, depth));
-    float grazingRay = 1.0 - smoothstep(0.05, 0.38, abs(viewDir.y));
-    float mirageMask = heatAmount * distanceBand * grazingRay;
-
-    vec3 reflectionDir = reflect(normalize(viewDir), vec3(0.0, 1.0, 0.0));
-    float ripple =
-        sin(position.x * 7.0 + time * 2.1) * 0.5 +
-        sin(position.z * 4.0 + position.x * 1.7 - time * 1.6) * 0.5;
-    reflectionDir.x += ripple * 0.018 * mirageMask;
-    reflectionDir.y += sin(position.x * 4.2 + position.z * 2.3 + time) * 0.006 * mirageMask;
-    reflectionDir = normalize(reflectionDir);
-
-    vec3 reflectionColor = traceObjectOrSky(position + vec3(0.0, 0.04, 0.0), reflectionDir);
-    reflectionColor = mix(reflectionColor, vec3(0.70, 0.78, 0.88), 0.08);
-
-    float reflectStrength = 0.78 * mirageMask;
-    return mix(groundColor, reflectionColor, reflectStrength);
-}
-
 float rectMask(vec2 p, vec2 minPoint, vec2 size) {
     vec2 inside = step(minPoint, p) * step(p, minPoint + size);
     return inside.x * inside.y;
@@ -424,11 +381,13 @@ vec3 drawTemperatureUI(vec3 sceneColor) {
 float getTemperature(vec3 p) {
     // ==========================================================
     // Spatial Shape Configuration
-    float ROAD_WIDTH = 15.0;             // Width of the hot region (larger values create a wider flat area)
-    float DECAY_RATE = 1.2;              // Cooling rate with altitude (smaller values produce a thicker heat layer,
+    float HEAT_CENTER_X = 0.0;
+    float HEAT_CENTER_Z = -25.0;
+    float HEAT_RADIUS_X = 17.0;
+    float HEAT_RADIUS_Z = 16.0;
+    float HEAT_EDGE_START = 0.65;
+    float DECAY_RATE = 0.7;              // Cooling rate with altitude (smaller values produce a thicker heat layer,
     // making distorted objects appear less vertically compressed)
-    float FADE_START_Z = 0.0;            // Z position where distant heating begins
-    float FADE_END_Z = -10.0;            // Z position where maximum heating is reached
 
     // Macro Noise (large, slowly drifting heat masses)
     vec2  MACRO_FREQ = vec2(0.8, 0.6);   // Spatial fluctuation frequency (x, z)
@@ -449,13 +408,18 @@ float getTemperature(vec3 p) {
         sin(p.x * MACRO_FREQ.x + time * MACRO_SPEED.x) *
         cos(p.z * MACRO_FREQ.y + time * MACRO_SPEED.y);
 
-    // Compute the road's base heat profile and depth-dependent heating
-    float baseShape = exp(-(p.x * p.x) / (ROAD_WIDTH * ROAD_WIDTH));
-    float localHeatFactor =
-        baseShape * ((1.0 - MACRO_AMP) + MACRO_AMP * macroNoise);
-
-    float depthFactor = smoothstep(FADE_START_Z, FADE_END_Z, p.z);
-    localHeatFactor *= depthFactor;
+    // Elliptical hot patch on the XZ plane.
+    vec2 ellipseCoord = vec2(
+        (p.x - HEAT_CENTER_X) / HEAT_RADIUS_X,
+        (p.z - HEAT_CENTER_Z) / HEAT_RADIUS_Z
+    );
+    float ellipseDistance = dot(ellipseCoord, ellipseCoord);
+    float baseShape = 1.0 - smoothstep(HEAT_EDGE_START, 1.0, ellipseDistance);
+    float localHeatFactor = clamp(
+        baseShape * ((1.0 - MACRO_AMP) + MACRO_AMP * macroNoise),
+        0.0,
+        1.0
+    );
 
     // Final ground temperature at the current (x, z) location
     float currentGroundTemp =
@@ -502,6 +466,39 @@ vec3 getIORGradient(vec3 p) {
     return vec3(n_x, n_y, n_z) / (2.0 * eps);
 }
 
+float getMirageBendMask(vec3 p) {
+    float height = max(p.y - groundHeight, 0.0);
+    float heightMask = 1.0 - smoothstep(0.15, MIRAGE_LAYER_HEIGHT, height);
+
+    float depth = -p.z;
+    float nearMask = smoothstep(MIRAGE_DEPTH_START, MIRAGE_DEPTH_FULL, depth);
+    float farMask = 1.0 - smoothstep(MIRAGE_DEPTH_END, MIRAGE_DEPTH_END + 6.0, depth);
+
+    return heightMask * nearMask * farMask;
+}
+
+vec3 bendRayDirection(vec3 p, vec3 direction, float stepSize) {
+    vec3 dir = normalize(direction);
+    float bendMask = getMirageBendMask(p);
+    if (bendMask <= 0.0001) {
+        return dir;
+    }
+
+    float n = max(getIOR(getTemperature(p)), 0.0001);
+    vec3 gradN = getIORGradient(p);
+
+    // Gradient-index ray equation:
+    // dT/ds = (grad(n) - T * dot(T, grad(n))) / n
+    // Only the component perpendicular to the current ray direction bends the ray.
+    vec3 perpendicularGrad = gradN - dir * dot(dir, gradN);
+    float gradLen = length(perpendicularGrad);
+    if (gradLen > IOR_GRADIENT_LIMIT) {
+        perpendicularGrad *= IOR_GRADIENT_LIMIT / gradLen;
+    }
+
+    return normalize(dir + perpendicularGrad * (stepSize / n) * IOR_BEND_STRENGTH * bendMask);
+}
+
 // Major function: Non-linear ray marching 
 vec3 rayMarch(Ray ray) {
     float stepSize = 0.05;
@@ -517,33 +514,18 @@ vec3 rayMarch(Ray ray) {
         vec2 hitUV;
         int hitObjType;
 
-        // Replaced trace() with checkHitVolume()
         if (checkHitVolume(currentPos, hitMat, hitNormal, hitUV, hitObjType)) {
-            if (hitObjType == 0) {
-                return shadeMirageGround(currentPos, currentDir, hitUV);
-            }
-
             return shadeSceneHit(hitObjType, hitNormal, hitUV);
         }
 
         if (currentPos.y > skyHeight) {
-            //return texture(skybox, currentDir).rgb;
-            
-            bool isMirage = (ray.direction.y < 0.0 && currentDir.y > 0.0);
-
-            if (isMirage) {
-                return texture(skybox, currentDir).rgb;
-            }
-            else {
-                //return texture(skybox, ray.direction).rgb;
-                return texture(skybox, currentDir).rgb;
-            }
+            return texture(skybox, currentDir).rgb;
         }
 
+        currentDir = bendRayDirection(currentPos, currentDir, stepSize);
         currentPos += currentDir * stepSize;
     }
 
-    //return texture(skybox, ray.direction).rgb;
     return texture(skybox, currentDir).rgb;
 }
 
