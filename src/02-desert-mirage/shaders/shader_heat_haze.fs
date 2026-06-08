@@ -8,7 +8,7 @@ uniform vec2 resolution;
 uniform float time;
 
 const float HAZE_STRENGTH = 5.0;
-const float FAR_DEPTH_HAZE = 0.3;
+const float FAR_DEPTH_HAZE = 0.15;
 const float DEPTH_HAZE_POWER = 1.35;
 
 vec2 hash22(vec2 p)

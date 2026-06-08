@@ -164,6 +164,9 @@ int main(int argc, char** argv)
 
 #ifdef __APPLE__
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); // uncomment this statement to fix compilation on OS X
+    if (offline.enabled) {
+        glfwWindowHint(GLFW_COCOA_RETINA_FRAMEBUFFER, GLFW_FALSE);
+    }
 #endif
 
     // glfw window creation
@@ -195,6 +198,10 @@ int main(int argc, char** argv)
     }
 
     glfwGetFramebufferSize(window, &framebufferWidth, &framebufferHeight);
+    if (offline.enabled) {
+        framebufferWidth = SCR_WIDTH;
+        framebufferHeight = SCR_HEIGHT;
+    }
 
     // configure global opengl state
     // -----------------------------
@@ -316,7 +323,7 @@ int main(int argc, char** argv)
         // Temperature
         rayTracingShader.setFloat("groundTemp", groundTemp);
         rayTracingShader.setFloat("skyTemp", skyTemp);
-        float noiseTime = currentFrame * 0.5f;
+        float noiseTime = currentFrame * 10.0f;
         rayTracingShader.setFloat("time", noiseTime);
 
         
