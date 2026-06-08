@@ -51,14 +51,14 @@ int framebufferHeight = SCR_HEIGHT;
 
 // camera
 const glm::vec3 INTRO_CAMERA_START_POS = glm::vec3(0.0f, 1.5f, 0.5f);
-const glm::vec3 INTRO_CAMERA_TARGET_POS = glm::vec3(0.0f, 1.5f, 0.5f);
+const glm::vec3 INTRO_CAMERA_TARGET_POS = glm::vec3(-7.0f, 1.5f, 0.5f);
 const float INTRO_CAMERA_START_YAW = -90.0f;
-const float INTRO_CAMERA_TARGET_YAW = -90.0f;
+const float INTRO_CAMERA_TARGET_YAW = -180.0f;
 const float INTRO_CAMERA_PITCH = 0.0f;
 const float INTRO_HOLD_START_END = 2.0f;
-const float INTRO_MOVE_END = 2.0f;
-const float INTRO_ROTATE_END = 2.0f;
-const float INTRO_HOLD_FINAL_END = 2.0f;
+const float INTRO_ROTATE_END = 3.0f;
+const float INTRO_MOVE_END = 6.0f;
+const float INTRO_HOLD_FINAL_END = 7.0f;
 bool introCameraAnimationFinished = false;
 
 Camera camera(INTRO_CAMERA_START_POS, glm::vec3(0.0f, 1.0f, 0.0f), INTRO_CAMERA_START_YAW, INTRO_CAMERA_PITCH);
@@ -80,7 +80,7 @@ bool usePCF = true;
 struct OfflineRenderConfig {
     bool enabled = false;
     int fps = 30;
-    int frameCount = 60;
+    int frameCount = 210;
     int tileSize = 128;
     float startTime = 0.0f;
     const char* outputDir = "offline_frames";
@@ -545,18 +545,18 @@ void applyIntroCameraAnimation(float elapsedTime)
         return;
     }
 
-    if (elapsedTime < INTRO_MOVE_END) {
-        float t = (elapsedTime - INTRO_HOLD_START_END) / (INTRO_MOVE_END - INTRO_HOLD_START_END);
-        glm::vec3 position = glm::mix(INTRO_CAMERA_START_POS, INTRO_CAMERA_TARGET_POS, glm::clamp(t, 0.0f, 1.0f));
-        setCameraPose(position, INTRO_CAMERA_START_YAW, INTRO_CAMERA_PITCH);
+    if (elapsedTime < INTRO_ROTATE_END) {
+        float t = (elapsedTime - INTRO_HOLD_START_END) / (INTRO_ROTATE_END - INTRO_HOLD_START_END);
+        float yaw = glm::mix(INTRO_CAMERA_START_YAW, INTRO_CAMERA_TARGET_YAW, glm::clamp(t, 0.0f, 1.0f));
+        setCameraPose(INTRO_CAMERA_START_POS, yaw, INTRO_CAMERA_PITCH);
         introCameraAnimationFinished = false;
         return;
     }
 
-    if (elapsedTime < INTRO_ROTATE_END) {
-        float t = (elapsedTime - INTRO_MOVE_END) / (INTRO_ROTATE_END - INTRO_MOVE_END);
-        float yaw = glm::mix(INTRO_CAMERA_START_YAW, INTRO_CAMERA_TARGET_YAW, glm::clamp(t, 0.0f, 1.0f));
-        setCameraPose(INTRO_CAMERA_TARGET_POS, yaw, INTRO_CAMERA_PITCH);
+    if (elapsedTime < INTRO_MOVE_END) {
+        float t = (elapsedTime - INTRO_ROTATE_END) / (INTRO_MOVE_END - INTRO_ROTATE_END);
+        glm::vec3 position = glm::mix(INTRO_CAMERA_START_POS, INTRO_CAMERA_TARGET_POS, glm::clamp(t, 0.0f, 1.0f));
+        setCameraPose(position, INTRO_CAMERA_TARGET_YAW, INTRO_CAMERA_PITCH);
         introCameraAnimationFinished = false;
         return;
     }
