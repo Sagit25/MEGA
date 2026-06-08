@@ -119,17 +119,15 @@ float getGroundTempAtTime(float renderTime)
 
 float getHazeAmountAtTime(float renderTime, float currentGroundTemp)
 {
-    const float hazeStartTime = 10.0f;
-    const float hazeMaxTime = 16.0f;
-    const float maxHazeGroundTemp = getGroundTempAtTime(hazeMaxTime);
+    const float countdownStartTime = 15.0f;
+    const float countdownMaxTime = 5.0f;
+    float remainingTime = glm::clamp(countdownStartTime - renderTime, 0.0f, countdownStartTime);
 
-    float heatRatio = (currentGroundTemp - skyTemp) / std::max(maxHazeGroundTemp - skyTemp, 0.001f);
-    heatRatio = glm::clamp(heatRatio, 0.0f, 1.0f);
-
-    float ramp = (renderTime - hazeStartTime) / std::max(hazeMaxTime - hazeStartTime, 0.001f);
+    float ramp = (countdownStartTime - remainingTime) / std::max(countdownStartTime - countdownMaxTime, 0.001f);
     ramp = glm::clamp(ramp, 0.0f, 1.0f);
 
-    return heatRatio * ramp;
+    float hasHeat = currentGroundTemp > skyTemp + 0.001f ? 1.0f : 0.0f;
+    return hasHeat * ramp;
 }
 
 void createDirectoryIfNeeded(const char* path)
@@ -350,6 +348,7 @@ int main(int argc, char** argv)
     heatHazeShader.use();
     heatHazeShader.setInt("sceneTexture", 0);
     heatHazeShader.setFloat("hazeAmount", 0.0f);
+    heatHazeShader.setFloat("groundTemp", groundTemp);
 
     desertModelShader.use();
     desertModelShader.setInt("diffuseTexture", 0);
@@ -401,7 +400,7 @@ int main(int argc, char** argv)
         // Temperature
         rayTracingShader.setFloat("groundTemp", groundTemp);
         rayTracingShader.setFloat("skyTemp", skyTemp);
-        float noiseTime = currentFrame * 10.0f;
+        float noiseTime = currentFrame * 3.3f;
         rayTracingShader.setFloat("time", noiseTime);
 
         
@@ -442,6 +441,7 @@ int main(int argc, char** argv)
         heatHazeShader.setFloat("time", noiseTime);
         heatHazeShader.setVec2("resolution", static_cast<float>(framebufferWidth), static_cast<float>(framebufferHeight));
         heatHazeShader.setFloat("hazeAmount", getHazeAmountAtTime(currentFrame, groundTemp));
+        heatHazeShader.setFloat("groundTemp", groundTemp);
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glViewport(0, 0, framebufferWidth, framebufferHeight);

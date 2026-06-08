@@ -556,7 +556,6 @@ void main()
     float maxAccumulationFrames = 100.0;
     float w = 1.0 / min(float(frameCountWithoutMove + 1.0), maxAccumulationFrames);
     color = (1.0 - w) * prevColor + w * color;
-    color = drawTemperatureUI(color);
 
     FragColor = vec4(color, 1.0);
 }

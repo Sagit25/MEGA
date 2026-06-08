@@ -7,6 +7,7 @@ uniform sampler2D sceneTexture;
 uniform vec2 resolution;
 uniform float time;
 uniform float hazeAmount;
+uniform float groundTemp;
 
 const float HAZE_STRENGTH = 5.0;
 const float FAR_DEPTH_HAZE = 0.15;
@@ -65,11 +66,63 @@ float uiMask(vec2 uv)
 {
     vec2 p = vec2(uv.x * resolution.x, (1.0 - uv.y) * resolution.y);
     float screenScale = clamp(resolution.y / 900.0, 0.85, 1.45);
-    float uiScale = screenScale * 0.5;
-    vec2 barMin = vec2(46.0, 42.0) * screenScale;
+    float uiScale = screenScale;
+    vec2 barMin = vec2(74.0, 66.0) * screenScale;
     vec2 barSize = vec2(30.0, 210.0) * uiScale;
     vec2 inside = step(barMin, p) * step(p, barMin + barSize);
     return inside.x * inside.y;
+}
+
+float rectMask(vec2 p, vec2 minPoint, vec2 size)
+{
+    vec2 inside = step(minPoint, p) * step(p, minPoint + size);
+    return inside.x * inside.y;
+}
+
+vec3 drawTemperatureUI(vec2 uv, vec3 sceneColor)
+{
+    vec2 p = vec2(uv.x * resolution.x, (1.0 - uv.y) * resolution.y);
+    float screenScale = clamp(resolution.y / 900.0, 0.85, 1.45);
+    float uiScale = screenScale;
+
+    vec2 barMin = vec2(74.0, 100.0) * screenScale;
+    vec2 barSize = vec2(30.0, 210.0) * uiScale;
+    float border = max(1.5, 3.0 * uiScale);
+    vec3 frameColor = vec3(0.43, 0.47, 0.51);
+    vec3 markerColor = vec3(0.36, 0.39, 0.43);
+
+    float outerMask = rectMask(p, barMin, barSize);
+    vec2 innerMin = barMin + vec2(border);
+    vec2 innerSize = barSize - vec2(border * 2.0);
+    float innerMask = rectMask(p, innerMin, innerSize);
+
+    vec3 color = sceneColor;
+    if (outerMask > 0.5) {
+        color = frameColor;
+    }
+    if (innerMask > 0.5) {
+        float barT = 1.0 - clamp((p.y - innerMin.y) / innerSize.y, 0.0, 1.0);
+        vec3 coldColor = vec3(0.45, 0.63, 0.88);
+        vec3 midColor = vec3(0.82, 0.73, 0.83);
+        vec3 hotColor = vec3(0.94, 0.48, 0.42);
+        color = barT < 0.5
+            ? mix(coldColor, midColor, barT * 2.0)
+            : mix(midColor, hotColor, (barT - 0.5) * 2.0);
+    }
+
+    float tempT = clamp((groundTemp - 20.0) / 190.0, 0.0, 1.0);
+    float markerY = innerMin.y + (1.0 - tempT) * innerSize.y - max(1.0, border * 0.65);
+    float markerLength = 24.0 * uiScale;
+    float markerThickness = max(1.5, 3.0 * uiScale);
+    vec2 markerMin = vec2(barMin.x - markerLength, markerY - markerThickness * 0.5);
+    vec2 markerSize = vec2(markerLength + border, markerThickness);
+    float markerMask = rectMask(p, markerMin, markerSize);
+
+    if (markerMask > 0.5) {
+        color = markerColor;
+    }
+
+    return color;
 }
 
 void main()
@@ -91,5 +144,7 @@ void main()
     ) * heat * HAZE_STRENGTH;
 
     vec2 sampleUV = clamp(uv + offset, vec2(0.001), vec2(0.999));
-    FragColor = texture(sceneTexture, sampleUV);
+    vec3 color = texture(sceneTexture, sampleUV).rgb;
+    color = drawTemperatureUI(uv, color);
+    FragColor = vec4(color, 1.0);
 }
