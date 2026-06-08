@@ -80,9 +80,9 @@ const float groundHeight = -0.5;
 const float skyHeight = 50.0;
 const float IOR_BEND_STRENGTH = 1.15;
 const float IOR_GRADIENT_LIMIT = 0.8;
-const float MIRAGE_DEPTH_START = 12.0;
-const float MIRAGE_DEPTH_FULL = 20.0;
-const float MIRAGE_DEPTH_END = 34.0;
+const float MIRAGE_DEPTH_START = 7.0;
+const float MIRAGE_DEPTH_FULL = 14.0;
+const float MIRAGE_DEPTH_END = 28.0;
 const float MIRAGE_LAYER_HEIGHT = 1.4;
 
 Ray getRay(vec2 uv){
