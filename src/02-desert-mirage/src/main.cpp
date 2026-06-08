@@ -65,7 +65,7 @@ unsigned int sceneFBO = 0;
 unsigned int sceneColorTexture = 0;
 
 // For temperature
-float groundTemp = 210.0f;
+float groundTemp = 20.0f;
 float skyTemp = 20.0f;
 float tempBefore = groundTemp;
 float grouondTemp_Initial = 100.0f;
@@ -75,7 +75,7 @@ struct OfflineRenderConfig {
     int fps = 30;
     int frameCount = 300;
     int tileSize = 128;
-    float startTime = 10.0f;
+    float startTime = 20.0f;
     const char* outputDir = "offline_frames";
 };
 
@@ -104,26 +104,20 @@ void saveImage(const char* filename) {
 
 float getGroundTempAtTime(float renderTime)
 {
-    const float initialGroundTemp = 210.0f;
+    const float animationStartTime = 20.0f;
+    const float maximumGroundTemp = 210.0f;
     const float minimumGroundTemp = 20.0f;
-    const float transitionStart = 10.0f;
-    const float transitionSpeed = 20.0f;
 
-    if (renderTime < transitionStart) {
-        return initialGroundTemp;
-    }
-
-    float cooledTemp = initialGroundTemp - transitionSpeed * (renderTime - transitionStart);
-    return std::max(cooledTemp, minimumGroundTemp);
+    float heatT = 1.0f - glm::clamp(renderTime / animationStartTime, 0.0f, 1.0f);
+    return minimumGroundTemp + (maximumGroundTemp - minimumGroundTemp) * heatT;
 }
 
 float getHazeAmountAtTime(float renderTime, float currentGroundTemp)
 {
     const float countdownStartTime = 15.0f;
     const float countdownMaxTime = 5.0f;
-    float remainingTime = glm::clamp(countdownStartTime - renderTime, 0.0f, countdownStartTime);
-
-    float ramp = (countdownStartTime - remainingTime) / std::max(countdownStartTime - countdownMaxTime, 0.001f);
+    float countdownTime = glm::clamp(renderTime, 0.0f, countdownStartTime);
+    float ramp = (countdownStartTime - countdownTime) / std::max(countdownStartTime - countdownMaxTime, 0.001f);
     ramp = glm::clamp(ramp, 0.0f, 1.0f);
 
     float hasHeat = currentGroundTemp > skyTemp + 0.001f ? 1.0f : 0.0f;
@@ -365,29 +359,20 @@ int main(int argc, char** argv)
     while (!glfwWindowShouldClose(window))// render loop
     {
         // For quick camera movement
-        float currentFrame = offline.enabled
-            ? offline.startTime + static_cast<float>(offlineFrameIndex) / static_cast<float>(offline.fps)
+        float elapsedTime = offline.enabled
+            ? static_cast<float>(offlineFrameIndex) / static_cast<float>(offline.fps)
             : static_cast<float>(glfwGetTime());
+        float currentFrame = glm::clamp(offline.startTime - elapsedTime, 0.0f, offline.startTime);
         if (offline.enabled) {
             deltaTime = 1.0f / static_cast<float>(offline.fps);
         }
         else {
-            deltaTime = currentFrame - lastFrame;
-            lastFrame = currentFrame;
+            deltaTime = elapsedTime - lastFrame;
+            lastFrame = elapsedTime;
         }
 
         // [Project] Animate temperature change
-        if (offline.enabled) {
-            groundTemp = getGroundTempAtTime(currentFrame);
-        }
-        else if (currentFrame >= 10.0f /*Starting time*/ && groundTemp > 20.0f) {
-            float transitionSpeed = 20.0f; // Speed in temperature decay
-            groundTemp -= transitionSpeed * deltaTime;
-
-            if (groundTemp < 20.0f) {
-                groundTemp = 20.0f;
-            }
-        }
+        groundTemp = getGroundTempAtTime(currentFrame);
 
         rayTracingShader.use();
         rayTracingShader.setFloat("H", framebufferHeight);

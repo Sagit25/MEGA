@@ -283,10 +283,11 @@ vec3 drawTemperatureUI(vec3 sceneColor) {
             : mix(midColor, hotColor, (barT - 0.5) * 2.0);
     }
 
-    float tempT = clamp((groundTemp - 20.0) / 190.0, 0.0, 1.0);
-    float markerY = innerMin.y + (1.0 - tempT) * innerSize.y - max(1.0, border * 0.65);
     float markerLength = 24.0 * uiScale;
     float markerThickness = max(1.5, 3.0 * uiScale);
+    float tempT = clamp((groundTemp - 20.0) / 190.0, 0.0, 1.0);
+    float markerY = innerMin.y + (1.0 - tempT) * innerSize.y - max(1.0, border * 0.65) + 1.5 * uiScale;
+    markerY = clamp(markerY, innerMin.y + markerThickness * 0.5, innerMin.y + innerSize.y - markerThickness * 0.5);
     vec2 markerMin = vec2(barMin.x - markerLength, markerY - markerThickness * 0.5);
     vec2 markerSize = vec2(markerLength + border, markerThickness);
     float markerMask = rectMask(p, markerMin, markerSize);
