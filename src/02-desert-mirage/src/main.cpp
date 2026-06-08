@@ -33,6 +33,7 @@ void resizeAccumTargets(int width, int height);
 void initSceneTarget(int width, int height);
 void resizeSceneTarget(int width, int height);
 float getGroundTempAtTime(float renderTime);
+float getHazeAmountAtTime(float renderTime, float currentGroundTemp);
 
 bool isWindowed = true;
 bool isKeyboardDone[1024] = { 0 };
@@ -111,6 +112,21 @@ float getGroundTempAtTime(float renderTime)
 
     float cooledTemp = initialGroundTemp - transitionSpeed * (renderTime - transitionStart);
     return std::max(cooledTemp, minimumGroundTemp);
+}
+
+float getHazeAmountAtTime(float renderTime, float currentGroundTemp)
+{
+    const float hazeStartTime = 10.0f;
+    const float hazeMaxTime = 16.0f;
+    const float maxHazeGroundTemp = getGroundTempAtTime(hazeMaxTime);
+
+    float heatRatio = (currentGroundTemp - skyTemp) / std::max(maxHazeGroundTemp - skyTemp, 0.001f);
+    heatRatio = glm::clamp(heatRatio, 0.0f, 1.0f);
+
+    float ramp = (renderTime - hazeStartTime) / std::max(hazeMaxTime - hazeStartTime, 0.001f);
+    ramp = glm::clamp(ramp, 0.0f, 1.0f);
+
+    return heatRatio * ramp;
 }
 
 void createDirectoryIfNeeded(const char* path)
@@ -277,6 +293,7 @@ int main(int argc, char** argv)
 
     heatHazeShader.use();
     heatHazeShader.setInt("sceneTexture", 0);
+    heatHazeShader.setFloat("hazeAmount", 0.0f);
 
     glm::mat4 viewMatBefore = camera.GetViewMatrix();
     float zoomBefore = camera.Zoom;
@@ -363,6 +380,7 @@ int main(int argc, char** argv)
         heatHazeShader.use();
         heatHazeShader.setFloat("time", noiseTime);
         heatHazeShader.setVec2("resolution", static_cast<float>(framebufferWidth), static_cast<float>(framebufferHeight));
+        heatHazeShader.setFloat("hazeAmount", getHazeAmountAtTime(currentFrame, groundTemp));
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glViewport(0, 0, framebufferWidth, framebufferHeight);

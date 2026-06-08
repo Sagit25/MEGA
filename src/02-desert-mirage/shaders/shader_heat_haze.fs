@@ -6,6 +6,7 @@ in vec2 TexCoords;
 uniform sampler2D sceneTexture;
 uniform vec2 resolution;
 uniform float time;
+uniform float hazeAmount;
 
 const float HAZE_STRENGTH = 5.0;
 const float FAR_DEPTH_HAZE = 0.15;
@@ -74,7 +75,7 @@ float uiMask(vec2 uv)
 void main()
 {
     vec2 uv = TexCoords;
-    float heat = heatBandMask(uv) * approximateDepthMask(uv) * (1.0 - uiMask(uv));
+    float heat = heatBandMask(uv) * approximateDepthMask(uv) * (1.0 - uiMask(uv)) * hazeAmount;
 
     vec2 aspect = vec2(resolution.x / max(resolution.y, 1.0), 1.0);
     vec2 drift = vec2(time * 0.18, time * 0.05);

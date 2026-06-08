@@ -56,9 +56,9 @@ uniform Material material_ground;
 uniform Material material_sphere_middle;
 
 Pyramid pyramids[] = Pyramid[](
-    Pyramid(vec3(0.0, -0.5, -24.0), 3.5, material_sphere_middle),
-    Pyramid(vec3(-6.4, -0.5, -27.0), 2.35, material_sphere_middle),
-    Pyramid(vec3(6.8, -0.5, -29.0), 2.55, material_sphere_middle)
+    Pyramid(vec3(0.0, -0.5, -24.0), 5.0, material_sphere_middle),
+    Pyramid(vec3(-10.0, -0.5, -27.0), 4.0, material_sphere_middle),
+    Pyramid(vec3(10.0, -0.5, -29.0), 4.0, material_sphere_middle)
 );
 
 //float rand(vec2 co) {
