@@ -416,13 +416,13 @@ int main(int argc, char** argv)
 
             float pitch = 0.0f;
             if (offlineFrameIndex >= 60 && offlineFrameIndex <= 90) {
-                pitch = glm::mix(0.0f, 15.0f, frameProgress(offlineFrameIndex, 60, 90));
+                pitch = glm::mix(0.0f, 20.0f, frameProgress(offlineFrameIndex, 60, 90));
             }
             else if (offlineFrameIndex > 90 && offlineFrameIndex < 480) {
-                pitch = 15.0f;
+                pitch = 20.0f;
             }
             else if (offlineFrameIndex >= 480 && offlineFrameIndex <= 540) {
-                pitch = glm::mix(15.0f, 0.0f, frameProgress(offlineFrameIndex, 480, 540));
+                pitch = glm::mix(20.0f, 0.0f, frameProgress(offlineFrameIndex, 480, 540));
             }
 
             float yaw = -90.0f;

@@ -19,11 +19,22 @@
 #include "scene.h"
 #include "math_utils.h"
 #include "light.h"
+#include "FreeImage.h"
+#include <algorithm>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <sys/stat.h>
+#include <sys/types.h>
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 void processInput(GLFWwindow* window, DirectionalLight* sun);
+void applyIntroCameraAnimation(float elapsedTime);
+void setCameraPose(const glm::vec3& position, float yaw, float pitch);
+void saveImage(const char* filename);
+void createDirectoryIfNeeded(const char* path);
 
 bool isWindowed = true;
 bool isKeyboardDone[1024] = { 0 };
@@ -35,8 +46,22 @@ const unsigned int SHADOW_WIDTH = 2048;
 const unsigned int SHADOW_HEIGHT = 2048;
 const float planeSize = 15.f;
 
+int framebufferWidth = SCR_WIDTH;
+int framebufferHeight = SCR_HEIGHT;
+
 // camera
-Camera camera(glm::vec3(0.0f, 1.5f, 0.5f));
+const glm::vec3 INTRO_CAMERA_START_POS = glm::vec3(0.0f, 1.5f, 0.5f);
+const glm::vec3 INTRO_CAMERA_TARGET_POS = glm::vec3(0.0f, 1.5f, 0.5f);
+const float INTRO_CAMERA_START_YAW = -90.0f;
+const float INTRO_CAMERA_TARGET_YAW = -90.0f;
+const float INTRO_CAMERA_PITCH = 0.0f;
+const float INTRO_HOLD_START_END = 2.0f;
+const float INTRO_MOVE_END = 2.0f;
+const float INTRO_ROTATE_END = 2.0f;
+const float INTRO_HOLD_FINAL_END = 2.0f;
+bool introCameraAnimationFinished = false;
+
+Camera camera(INTRO_CAMERA_START_POS, glm::vec3(0.0f, 1.0f, 0.0f), INTRO_CAMERA_START_YAW, INTRO_CAMERA_PITCH);
 float lastX = SCR_WIDTH / 2.0f;
 float lastY = SCR_HEIGHT / 2.0f;
 bool firstMouse = true;
@@ -52,17 +77,90 @@ bool useLighting = true;
 bool useShadow = true;
 bool usePCF = true;
 
-int main()
+struct OfflineRenderConfig {
+    bool enabled = false;
+    int fps = 30;
+    int frameCount = 60;
+    int tileSize = 128;
+    float startTime = 0.0f;
+    const char* outputDir = "offline_frames";
+};
+
+void saveImage(const char* filename)
 {
+    int width = framebufferWidth;
+    int height = framebufferHeight;
+    BYTE* pixels = new BYTE[3 * width * height];
+    glReadPixels(0, 0, width, height, GL_BGR, GL_UNSIGNED_BYTE, pixels);
+
+    FIBITMAP* image = FreeImage_ConvertFromRawBits(
+        pixels,
+        width,
+        height,
+        3 * width,
+        24,
+        0xFF0000,
+        0x00FF00,
+        0x0000FF,
+        false
+    );
+    FreeImage_Save(FIF_PNG, image, filename, 0);
+    FreeImage_Unload(image);
+    delete[] pixels;
+}
+
+void createDirectoryIfNeeded(const char* path)
+{
+    mkdir(path, 0755);
+}
+
+int main(int argc, char** argv)
+{
+    OfflineRenderConfig offline;
+    for (int i = 1; i < argc; ++i) {
+        if (std::strcmp(argv[i], "--offline") == 0) {
+            offline.enabled = true;
+        }
+        else if (std::strcmp(argv[i], "--fps") == 0 && i + 1 < argc) {
+            offline.fps = std::max(1, std::atoi(argv[++i]));
+        }
+        else if (std::strcmp(argv[i], "--frames") == 0 && i + 1 < argc) {
+            offline.frameCount = std::max(1, std::atoi(argv[++i]));
+        }
+        else if (std::strcmp(argv[i], "--tile-size") == 0 && i + 1 < argc) {
+            offline.tileSize = std::max(16, std::atoi(argv[++i]));
+        }
+        else if (std::strcmp(argv[i], "--start-time") == 0 && i + 1 < argc) {
+            offline.startTime = std::max(0.0f, static_cast<float>(std::atof(argv[++i])));
+        }
+        else if (std::strcmp(argv[i], "--output") == 0 && i + 1 < argc) {
+            offline.outputDir = argv[++i];
+        }
+    }
+    if (offline.enabled) {
+        createDirectoryIfNeeded(offline.outputDir);
+        std::cout << "Offline rendering: " << offline.frameCount
+                  << " frames at " << offline.fps
+                  << " fps from t=" << offline.startTime
+                  << ", 1920x1080, tile " << offline.tileSize
+                  << " -> " << offline.outputDir << std::endl;
+    }
+
     // glfw: initialize and configure
     // ------------------------------
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    if (offline.enabled) {
+        glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
+    }
 
 #ifdef __APPLE__
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); // uncomment this statement to fix compilation on OS X
+    if (offline.enabled) {
+        glfwWindowHint(GLFW_COCOA_RETINA_FRAMEBUFFER, GLFW_FALSE);
+    }
 #endif
 
     // glfw window creation
@@ -76,11 +174,13 @@ int main()
     }
     glfwMakeContextCurrent(window);
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
-    glfwSetCursorPosCallback(window, mouse_callback);
-    glfwSetScrollCallback(window, scroll_callback);
+    if (!offline.enabled) {
+        glfwSetCursorPosCallback(window, mouse_callback);
+        glfwSetScrollCallback(window, scroll_callback);
 
-    // tell GLFW to capture our mouse
-    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+        // tell GLFW to capture our mouse
+        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    }
 
     // glad: load all OpenGL function pointers
     // ---------------------------------------
@@ -93,6 +193,38 @@ int main()
     // configure global opengl state
     // -----------------------------
     glEnable(GL_DEPTH_TEST);
+
+    glfwGetFramebufferSize(window, &framebufferWidth, &framebufferHeight);
+
+    unsigned int offlineFBO = 0;
+    unsigned int offlineColorTexture = 0;
+    unsigned int offlineDepthRBO = 0;
+    if (offline.enabled) {
+        glGenFramebuffers(1, &offlineFBO);
+        glBindFramebuffer(GL_FRAMEBUFFER, offlineFBO);
+
+        glGenTextures(1, &offlineColorTexture);
+        glBindTexture(GL_TEXTURE_2D, offlineColorTexture);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, SCR_WIDTH, SCR_HEIGHT, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, offlineColorTexture, 0);
+
+        glGenRenderbuffers(1, &offlineDepthRBO);
+        glBindRenderbuffer(GL_RENDERBUFFER, offlineDepthRBO);
+        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, SCR_WIDTH, SCR_HEIGHT);
+        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, offlineDepthRBO);
+
+        if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+            std::cout << "Failed to create offline framebuffer" << std::endl;
+            glfwTerminate();
+            return -1;
+        }
+
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        framebufferWidth = SCR_WIDTH;
+        framebufferHeight = SCR_HEIGHT;
+    }
 
     // build and compile our shader program
     // ------------------------------------
@@ -193,16 +325,28 @@ int main()
 
     DirectionalLight sun(-90.0f, 45.0f, glm::vec3(1.0f));
 
-    float oldTime = 0;
+    float oldTime = offline.enabled ? offline.startTime : static_cast<float>(glfwGetTime());
+    float introStartTime = offline.enabled ? 0.0f : oldTime;
+    int offlineFrameIndex = 0;
     while (!glfwWindowShouldClose(window))// render loop
     {
-        float currentTime = glfwGetTime();
-        float dt = currentTime - oldTime;
+        float currentTime = offline.enabled
+            ? offline.startTime + static_cast<float>(offlineFrameIndex) / static_cast<float>(offline.fps)
+            : static_cast<float>(glfwGetTime());
+        float dt = offline.enabled ? 1.0f / static_cast<float>(offline.fps) : currentTime - oldTime;
         deltaTime = dt;
         oldTime = currentTime;
 
-        // input
-        processInput(window, &sun);
+        if (!offline.enabled && glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
+            glfwSetWindowShouldClose(window, true);
+        }
+        float introElapsedTime = offline.enabled ? currentTime : currentTime - introStartTime;
+        if (!introCameraAnimationFinished) {
+            applyIntroCameraAnimation(introElapsedTime);
+        }
+        if (!offline.enabled && introCameraAnimationFinished) {
+            processInput(window, &sun);
+        }
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         
@@ -242,10 +386,17 @@ int main()
             }
         }
 
-        // reset framebuffer to default framebuffer
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
-        int currentWidth, currentHeight;
-        glfwGetFramebufferSize(window, &currentWidth, &currentHeight);
+        if (offline.enabled) {
+            glBindFramebuffer(GL_FRAMEBUFFER, offlineFBO);
+            framebufferWidth = SCR_WIDTH;
+            framebufferHeight = SCR_HEIGHT;
+        }
+        else {
+            glBindFramebuffer(GL_FRAMEBUFFER, 0);
+            glfwGetFramebufferSize(window, &framebufferWidth, &framebufferHeight);
+        }
+        int currentWidth = framebufferWidth;
+        int currentHeight = framebufferHeight;
         glViewport(0, 0, currentWidth, currentHeight);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -264,7 +415,7 @@ int main()
         if (usePCF) lightingShader.setFloat("usePCF", 1.0f);
         else lightingShader.setFloat("usePCF", 0.0f);
 
-        glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+        glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)currentWidth / (float)currentHeight, 0.1f, 100.0f);
         glm::mat4 view = camera.GetViewMatrix();
 
         // set projection, view, camera position to lighting shader
@@ -340,11 +491,34 @@ int main()
         glBindVertexArray(0);
         glDepthFunc(GL_LESS);
 
-        // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
-        // -------------------------------------------------------------------------------
-        glfwSwapBuffers(window);
-        glfwPollEvents();
+        if (offline.enabled) {
+            glFinish();
+
+            char filename[256];
+            std::snprintf(filename, sizeof(filename), "%s/frame_%04d.png", offline.outputDir, offlineFrameIndex);
+            saveImage(filename);
+
+            if (offlineFrameIndex % offline.fps == 0) {
+                std::cout << "Saved " << filename << std::endl;
+            }
+
+            ++offlineFrameIndex;
+            if (offlineFrameIndex >= offline.frameCount) {
+                glfwSetWindowShouldClose(window, true);
+            }
+            glfwPollEvents();
+        }
+        else {
+            // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
+            // -------------------------------------------------------------------------------
+            glfwSwapBuffers(window);
+            glfwPollEvents();
+        }
     }
+
+    if (offlineColorTexture) glDeleteTextures(1, &offlineColorTexture);
+    if (offlineDepthRBO) glDeleteRenderbuffers(1, &offlineDepthRBO);
+    if (offlineFBO) glDeleteFramebuffers(1, &offlineFBO);
 
     // optional: de-allocate all resources once they've outlived their purpose:
     // ------------------------------------------------------------------------
@@ -353,6 +527,42 @@ int main()
     // ------------------------------------------------------------------
     glfwTerminate();
     return 0;
+}
+
+void setCameraPose(const glm::vec3& position, float yaw, float pitch)
+{
+    camera.Position = position;
+    camera.Yaw = yaw;
+    camera.Pitch = pitch;
+    camera.ProcessMouseMovement(0.0f, 0.0f);
+}
+
+void applyIntroCameraAnimation(float elapsedTime)
+{
+    if (elapsedTime < INTRO_HOLD_START_END) {
+        setCameraPose(INTRO_CAMERA_START_POS, INTRO_CAMERA_START_YAW, INTRO_CAMERA_PITCH);
+        introCameraAnimationFinished = false;
+        return;
+    }
+
+    if (elapsedTime < INTRO_MOVE_END) {
+        float t = (elapsedTime - INTRO_HOLD_START_END) / (INTRO_MOVE_END - INTRO_HOLD_START_END);
+        glm::vec3 position = glm::mix(INTRO_CAMERA_START_POS, INTRO_CAMERA_TARGET_POS, glm::clamp(t, 0.0f, 1.0f));
+        setCameraPose(position, INTRO_CAMERA_START_YAW, INTRO_CAMERA_PITCH);
+        introCameraAnimationFinished = false;
+        return;
+    }
+
+    if (elapsedTime < INTRO_ROTATE_END) {
+        float t = (elapsedTime - INTRO_MOVE_END) / (INTRO_ROTATE_END - INTRO_MOVE_END);
+        float yaw = glm::mix(INTRO_CAMERA_START_YAW, INTRO_CAMERA_TARGET_YAW, glm::clamp(t, 0.0f, 1.0f));
+        setCameraPose(INTRO_CAMERA_TARGET_POS, yaw, INTRO_CAMERA_PITCH);
+        introCameraAnimationFinished = false;
+        return;
+    }
+
+    setCameraPose(INTRO_CAMERA_TARGET_POS, INTRO_CAMERA_TARGET_YAW, INTRO_CAMERA_PITCH);
+    introCameraAnimationFinished = elapsedTime >= INTRO_HOLD_FINAL_END;
 }
 
 // process all input: query GLFW whether relevant keys are pressed/released this frame and react accordingly
