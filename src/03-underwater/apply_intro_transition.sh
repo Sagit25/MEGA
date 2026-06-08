@@ -14,8 +14,8 @@ resolve_arg_path() {
   fi
 }
 
-INPUT="${1:-$SCRIPT_DIR/build/fire_guide_offlinwe.mp4}"
-OUTPUT="${2:-$SCRIPT_DIR/build/fire_guide_offline_intro.mp4}"
+INPUT="${1:-$SCRIPT_DIR/build/underwater_offline.mp4}"
+OUTPUT="${2:-$SCRIPT_DIR/build/underwater_offline_intro.mp4}"
 if [[ $# -ge 1 ]]; then
   INPUT="$(resolve_arg_path "$INPUT")"
 fi

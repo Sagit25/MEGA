@@ -68,7 +68,7 @@ public:
 
     // Returns the view matrix calculated using Euler Angles and the LookAt Matrix
     glm::mat4 GetViewMatrixVerticalFixed()
-    {   
+    {
         glm::vec3 frontProjected = glm::vec3(Front.x, 0, Front.z);
         frontProjected = glm::normalize(frontProjected);
         return glm::lookAt(Position, Position + frontProjected, glm::vec3(0,1,0));
@@ -119,6 +119,19 @@ public:
             Zoom = 1.0f;
         if (Zoom >= 45.0f)
             Zoom = 45.0f;
+    }
+
+    void SetAngles(float yaw, float pitch)
+    {
+        Yaw = yaw;
+        Pitch = pitch;
+
+        if (Pitch > 89.0f)
+            Pitch = 89.0f;
+        if (Pitch < -89.0f)
+            Pitch = -89.0f;
+
+        updateCameraVectors();
     }
 
 private:

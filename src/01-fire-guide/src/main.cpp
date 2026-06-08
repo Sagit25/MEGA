@@ -568,7 +568,7 @@ int main(int argc, char** argv)
     skyboxShader.use();
     skyboxShader.setInt("skyboxTexture1", 0);
 
-    DirectionalLight sun(-90.0f, 45.0f, glm::vec3(0.8f));
+    DirectionalLight sun(-90.0f, 45.0f, glm::vec3(1.0f));
 
     float oldTime = offline.enabled ? offline.startTime : static_cast<float>(glfwGetTime());
     float flightTime = 0.0f;
