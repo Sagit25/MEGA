@@ -34,6 +34,7 @@ void resizeAccumTargets(int width, int height);
 void initSceneTarget(int width, int height);
 void resizeSceneTarget(int width, int height);
 float getGroundTempAtTime(float renderTime);
+float getTemperatureRenderTime(float elapsedTime);
 float getHazeAmountAtTime(float renderTime, float currentGroundTemp);
 void drawModelEntities(Shader& shader, const std::vector<Entity*>& entities);
 glm::vec3 getDirectionalLightDir(float azimuth, float elevation);
@@ -70,12 +71,17 @@ float skyTemp = 20.0f;
 float tempBefore = groundTemp;
 float grouondTemp_Initial = 100.0f;
 
+constexpr float TEMPERATURE_INTRO_HOLD_SECONDS = 6.0f;
+constexpr float TEMPERATURE_ANIMATION_SECONDS = 20.0f;
+constexpr float TEMPERATURE_OUTRO_HOLD_SECONDS = 6.0f;
+constexpr float TEMPERATURE_TOTAL_SECONDS =
+    TEMPERATURE_INTRO_HOLD_SECONDS + TEMPERATURE_ANIMATION_SECONDS + TEMPERATURE_OUTRO_HOLD_SECONDS;
+
 struct OfflineRenderConfig {
     bool enabled = false;
     int fps = 30;
-    int frameCount = 300;
+    int frameCount = 960;
     int tileSize = 128;
-    float startTime = 20.0f;
     const char* outputDir = "offline_frames";
 };
 
@@ -104,12 +110,21 @@ void saveImage(const char* filename) {
 
 float getGroundTempAtTime(float renderTime)
 {
-    const float animationStartTime = 20.0f;
     const float maximumGroundTemp = 210.0f;
     const float minimumGroundTemp = 20.0f;
 
-    float heatT = 1.0f - glm::clamp(renderTime / animationStartTime, 0.0f, 1.0f);
+    float heatT = 1.0f - glm::clamp(renderTime / TEMPERATURE_ANIMATION_SECONDS, 0.0f, 1.0f);
     return minimumGroundTemp + (maximumGroundTemp - minimumGroundTemp) * heatT;
+}
+
+float getTemperatureRenderTime(float elapsedTime)
+{
+    float animationElapsed = glm::clamp(
+        elapsedTime - TEMPERATURE_INTRO_HOLD_SECONDS,
+        0.0f,
+        TEMPERATURE_ANIMATION_SECONDS
+    );
+    return TEMPERATURE_ANIMATION_SECONDS - animationElapsed;
 }
 
 float getHazeAmountAtTime(float renderTime, float currentGroundTemp)
@@ -164,6 +179,7 @@ int main(int argc, char** argv)
     std::cout << "Current main.cpp: hw5_real_final" << std::endl;
 
     OfflineRenderConfig offline;
+    bool frameCountProvided = false;
     for (int i = 1; i < argc; ++i) {
         if (std::strcmp(argv[i], "--offline") == 0) {
             offline.enabled = true;
@@ -173,22 +189,26 @@ int main(int argc, char** argv)
         }
         else if (std::strcmp(argv[i], "--frames") == 0 && i + 1 < argc) {
             offline.frameCount = std::max(1, std::atoi(argv[++i]));
+            frameCountProvided = true;
         }
         else if (std::strcmp(argv[i], "--tile-size") == 0 && i + 1 < argc) {
             offline.tileSize = std::max(16, std::atoi(argv[++i]));
         }
         else if (std::strcmp(argv[i], "--start-time") == 0 && i + 1 < argc) {
-            offline.startTime = std::max(0.0f, static_cast<float>(std::atof(argv[++i])));
+            ++i;
         }
         else if (std::strcmp(argv[i], "--output") == 0 && i + 1 < argc) {
             offline.outputDir = argv[++i];
         }
     }
     if (offline.enabled) {
+        if (!frameCountProvided) {
+            offline.frameCount = std::max(1, static_cast<int>(std::ceil(offline.fps * TEMPERATURE_TOTAL_SECONDS)));
+        }
         createDirectoryIfNeeded(offline.outputDir);
         std::cout << "Offline rendering: " << offline.frameCount
                   << " frames at " << offline.fps
-                  << " fps from t=" << offline.startTime
+                  << " fps, temperature timeline 0-" << TEMPERATURE_TOTAL_SECONDS << "s"
                   << ", tile " << offline.tileSize
                   << " -> " << offline.outputDir << std::endl;
     }
@@ -362,7 +382,7 @@ int main(int argc, char** argv)
         float elapsedTime = offline.enabled
             ? static_cast<float>(offlineFrameIndex) / static_cast<float>(offline.fps)
             : static_cast<float>(glfwGetTime());
-        float currentFrame = glm::clamp(offline.startTime - elapsedTime, 0.0f, offline.startTime);
+        float temperatureTime = getTemperatureRenderTime(elapsedTime);
         if (offline.enabled) {
             deltaTime = 1.0f / static_cast<float>(offline.fps);
         }
@@ -372,7 +392,7 @@ int main(int argc, char** argv)
         }
 
         // [Project] Animate temperature change
-        groundTemp = getGroundTempAtTime(currentFrame);
+        groundTemp = getGroundTempAtTime(temperatureTime);
 
         rayTracingShader.use();
         rayTracingShader.setFloat("H", framebufferHeight);
@@ -385,7 +405,7 @@ int main(int argc, char** argv)
         // Temperature
         rayTracingShader.setFloat("groundTemp", groundTemp);
         rayTracingShader.setFloat("skyTemp", skyTemp);
-        float noiseTime = currentFrame * 3.3f;
+        float noiseTime = elapsedTime * 2.4f;
         rayTracingShader.setFloat("time", noiseTime);
 
         
@@ -425,7 +445,7 @@ int main(int argc, char** argv)
         heatHazeShader.use();
         heatHazeShader.setFloat("time", noiseTime);
         heatHazeShader.setVec2("resolution", static_cast<float>(framebufferWidth), static_cast<float>(framebufferHeight));
-        heatHazeShader.setFloat("hazeAmount", getHazeAmountAtTime(currentFrame, groundTemp));
+        heatHazeShader.setFloat("hazeAmount", getHazeAmountAtTime(temperatureTime, groundTemp));
         heatHazeShader.setFloat("groundTemp", groundTemp);
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);

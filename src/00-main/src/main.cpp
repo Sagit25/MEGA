@@ -29,8 +29,8 @@ bool isWindowed = true;
 bool isKeyboardDone[1024] = { 0 };
 
 // setting
-const unsigned int SCR_WIDTH = 800;
-const unsigned int SCR_HEIGHT = 600;
+const unsigned int SCR_WIDTH = 1920;
+const unsigned int SCR_HEIGHT = 1080;
 const unsigned int SHADOW_WIDTH = 2048;
 const unsigned int SHADOW_HEIGHT = 2048;
 const float planeSize = 15.f;
@@ -50,7 +50,7 @@ bool useSpecular = false;
 
 bool useLighting = true;
 bool useShadow = true;
-bool usePCF = false;
+bool usePCF = true;
 
 int main()
 {

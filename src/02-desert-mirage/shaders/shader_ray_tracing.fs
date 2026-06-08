@@ -113,33 +113,32 @@ mat3 rotX(float angle) {
 }
 
 const float pyramidRotX = 40.0;
+const float PYRAMID_HIT_EPS = 0.04;
 
 bool checkPyramid(vec3 p, Pyramid pyr, out vec3 normal) {
     vec3 localP = p - pyr.center;
     float halfBase = pyr.size;
     float height = pyr.size * 1.45;
 
-    if (localP.y < 0.0 || localP.y > height) {
+    if (localP.y < -PYRAMID_HIT_EPS || localP.y > height + PYRAMID_HIT_EPS) {
         return false;
     }
 
     float slope = halfBase / height;
-    float halfWidth = halfBase * (1.0 - localP.y / height);
+    float heightP = clamp(localP.y, 0.0, height);
+    float halfWidth = halfBase * (1.0 - heightP / height);
     float sideX = halfWidth - abs(localP.x);
     float sideZ = halfWidth - abs(localP.z);
 
-    if (sideX < 0.0 || sideZ < 0.0) {
+    if (sideX < -PYRAMID_HIT_EPS || sideZ < -PYRAMID_HIT_EPS) {
         return false;
     }
 
-    if (localP.y < min(sideX, sideZ) && localP.y < 0.08) {
-        normal = vec3(0.0, -1.0, 0.0);
-    }
-    else if (sideX < sideZ) {
-        normal = normalize(vec3(sign(localP.x), slope, 0.0));
+    if (sideX < sideZ) {
+        normal = normalize(vec3(localP.x < 0.0 ? -1.0 : 1.0, slope, 0.0));
     }
     else {
-        normal = normalize(vec3(0.0, slope, sign(localP.z)));
+        normal = normalize(vec3(0.0, slope, localP.z < 0.0 ? -1.0 : 1.0));
     }
 
     return true;
@@ -194,17 +193,14 @@ bool checkObjectHitVolume(vec3 p, out Material hitMat, out vec3 hitNormal, out v
             float objTexScale = 0.45;
 
             hitUV = vec2(1.0);
-            if (pyrNormal.y < -0.5) {
-                hitUV.x = localP.x * objTexScale;
-                hitUV.y = localP.z * objTexScale;
-            }
-            else if (abs(pyrNormal.x) > abs(pyrNormal.z)) {
+            float faceY = max(localP.y, 0.0);
+            if (abs(pyrNormal.x) > abs(pyrNormal.z)) {
                 hitUV.x = localP.z * sign(pyrNormal.x) * objTexScale;
-                hitUV.y = localP.y * objTexScale;
+                hitUV.y = faceY * objTexScale;
             }
             else {
                 hitUV.x = localP.x * sign(pyrNormal.z) * -1.0 * objTexScale;
-                hitUV.y = localP.y * objTexScale;
+                hitUV.y = faceY * objTexScale;
             }
             hitUV = fract(hitUV);
 
@@ -242,10 +238,7 @@ vec3 shadeSceneHit(int hitObjType, vec3 hitNormal, vec2 hitUV) {
         texColor = mix(texture(objectTexture, hitUV).rgb, vec3(0.95, 0.54, 0.22), 0.12);
     }
 
-    vec3 lightDir = normalize(vec3(0.5, 1.0, 0.5));
-    float diff = max(dot(hitNormal, lightDir), 0.2);
-
-    return texColor * diff;
+    return texColor;
 }
 
 float rectMask(vec2 p, vec2 minPoint, vec2 size) {
