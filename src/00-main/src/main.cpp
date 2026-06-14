@@ -120,35 +120,35 @@ int main()
 
 
     // define models
-    Model brickCubeModel("../resources/brickcube/brickcube.obj");
-    brickCubeModel.setDiffuse("../resources/brickcube/brickcube_d.png");
-    brickCubeModel.setSpecular("../resources/brickcube/brickcube_s.png");
-    brickCubeModel.setNormal("../resources/brickcube/brickcube_n.png");
+    Model brickCubeModel("../resources/0-main/brickcube/brickcube.obj");
+    brickCubeModel.setDiffuse("../resources/0-main/brickcube/brickcube_d.png");
+    brickCubeModel.setSpecular("../resources/0-main/brickcube/brickcube_s.png");
+    brickCubeModel.setNormal("../resources/0-main/brickcube/brickcube_n.png");
 
-    Model boulderModel("../resources/boulder/boulder.obj");
-    boulderModel.setDiffuse("../resources/boulder/boulder_d.png");
-    boulderModel.setNormal("../resources/boulder/boulder_n.png");
+    Model boulderModel("../resources/0-main/boulder/boulder.obj");
+    boulderModel.setDiffuse("../resources/0-main/boulder/boulder_d.png");
+    boulderModel.setNormal("../resources/0-main/boulder/boulder_n.png");
 
-    Model grassGroundModel = Model("../resources/plane.obj", true);
-    grassGroundModel.setDiffuse("../resources/grass_ground.jpg");
+    Model grassGroundModel = Model("../resources/0-main/plane.obj", true);
+    grassGroundModel.setDiffuse("../resources/0-main/grass_ground.jpg");
 
-    Model barrelModel = Model("../resources/barrel/barrel.obj");
-    barrelModel.setDiffuse("../resources/barrel/barrel_d.png");
-    barrelModel.setSpecular("../resources/barrel/barrel_s.png");
-    barrelModel.setNormal("../resources/barrel/barrel_n.png");
+    Model barrelModel = Model("../resources/0-main/barrel/barrel.obj");
+    barrelModel.setDiffuse("../resources/0-main/barrel/barrel_d.png");
+    barrelModel.setSpecular("../resources/0-main/barrel/barrel_s.png");
+    barrelModel.setNormal("../resources/0-main/barrel/barrel_n.png");
 
-    Model fireExtModel = Model("../resources/FireExt/FireExt.obj");
-    fireExtModel.setDiffuse("../resources/FireExt/FireExt_d.jpg");
-    fireExtModel.setSpecular("../resources/FireExt/FireExt_s.jpg");
-    fireExtModel.setNormal("../resources/FireExt/FireExt_n.jpg");
+    Model fireExtModel = Model("../resources/0-main/FireExt/FireExt.obj");
+    fireExtModel.setDiffuse("../resources/0-main/FireExt/FireExt_d.jpg");
+    fireExtModel.setSpecular("../resources/0-main/FireExt/FireExt_s.jpg");
+    fireExtModel.setNormal("../resources/0-main/FireExt/FireExt_n.jpg");
 
-    Model catModel = Model("../resources/cat/12221_Cat_v1_l3.obj");
-    catModel.setDiffuse("../resources/cat/Cat_diffuse.jpg");
+    Model catModel = Model("../resources/0-main/cat/12221_Cat_v1_l3.obj");
+    catModel.setDiffuse("../resources/0-main/cat/Cat_diffuse.jpg");
 
-    Model roomModel = Model("../resources/room/small_house_obj.obj");
-    Model houseModel = Model("../resources/room/Warehouse.obj");
-    Model sofaModel = Model("../resources/sofa/sofa.obj");
-    Model tableModel = Model("../resources/table/Center Table.obj");
+    Model roomModel = Model("../resources/0-main/room/small_house_obj.obj");
+    Model houseModel = Model("../resources/0-main/room/Warehouse.obj");
+    Model sofaModel = Model("../resources/0-main/sofa/sofa.obj");
+    Model tableModel = Model("../resources/0-main/table/Center Table.obj");
 
 
 
@@ -188,12 +188,12 @@ int main()
     // skybox
     std::vector<std::string> faces
     {
-        "../resources/skybox/right.jpg",
-        "../resources/skybox/left.jpg",
-        "../resources/skybox/top.jpg",
-        "../resources/skybox/bottom.jpg",
-        "../resources/skybox/front.jpg",
-        "../resources/skybox/back.jpg"
+        "../resources/0-main/skybox/right.jpg",
+        "../resources/0-main/skybox/left.jpg",
+        "../resources/0-main/skybox/top.jpg",
+        "../resources/0-main/skybox/bottom.jpg",
+        "../resources/0-main/skybox/front.jpg",
+        "../resources/0-main/skybox/back.jpg"
     };
     CubemapTexture skyboxTexture = CubemapTexture(faces);
     unsigned int VAOskybox, VBOskybox;

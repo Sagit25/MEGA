@@ -62,7 +62,7 @@ bool useSpecular = false;
 
 bool useLighting = true;
 bool useShadow = true;
-bool usePCF = false;
+bool usePCF = true;
 unsigned int fireSpawnRate = 100;
 
 struct Meteor {
@@ -362,18 +362,18 @@ int main()
     Shader particleShader("../shaders/particle.vs", "../shaders/particle.fs");
 
     // define models
-    Model toothlessModel = Model("../resources/toothless/toothless.obj");
-    Model boulderModel("../resources/boulder/boulder.obj");
-    boulderModel.setDiffuse("../resources/boulder/boulder_d.png");
-    boulderModel.setNormal("../resources/boulder/boulder_n.png");
-    Model airplane1Model("../resources/airplane1/11803_Airplane_v1_l1.obj");
-    Model airplane2Model("../resources/airplane2/11804_Airplane_v2_l2.obj");
-    Model dragonModel("../resources/dragon/dragon.obj");
-    dragonModel.setDiffuse("../resources/dragon/textures/Dragon_Bump_Col2.jpg");
-    dragonModel.setNormal("../resources/dragon/textures/Dragon_Nor.jpg");
-    Model houseModel = Model("../../00-main/resources/room/Warehouse.obj");
-    Model sofaModel = Model("../../00-main/resources/sofa/sofa.obj");
-    Model tableModel = Model("../../00-main/resources/table/Center Table.obj");
+    Model toothlessModel = Model("../../00-main/resources/1-volcano/toothless/toothless.obj");
+    Model boulderModel("../../00-main/resources/1-volcano/boulder/boulder.obj");
+    boulderModel.setDiffuse("../../00-main/resources/1-volcano/boulder/boulder_d.png");
+    boulderModel.setNormal("../../00-main/resources/1-volcano/boulder/boulder_n.png");
+    Model airplane1Model("../../00-main/resources/1-volcano/airplane1/11803_Airplane_v1_l1.obj");
+    Model airplane2Model("../../00-main/resources/1-volcano/airplane2/11804_Airplane_v2_l2.obj");
+    Model dragonModel("../../00-main/resources/1-volcano/dragon/dragon.obj");
+    dragonModel.setDiffuse("../../00-main/resources/1-volcano/dragon/textures/Dragon_Bump_Col2.jpg");
+    dragonModel.setNormal("../../00-main/resources/1-volcano/dragon/textures/Dragon_Nor.jpg");
+    Model houseModel = Model("../../00-main/resources/0-main/room/Warehouse.obj");
+    Model sofaModel = Model("../../00-main/resources/0-main/sofa/sofa.obj");
+    Model tableModel = Model("../../00-main/resources/0-main/table/Center Table.obj");
 
     // Add entities to scene.
     Scene scene;
@@ -434,12 +434,12 @@ int main()
 
     // skybox (fire)
     std::vector<std::string> faces {
-        "../resources/fireskybox/vulcan_bk.jpg",
-        "../resources/fireskybox/vulcan_ft.jpg",
-        "../resources/fireskybox/vulcan_up.jpg",
-        "../resources/fireskybox/vulcan_dn.jpg",
-        "../resources/fireskybox/vulcan_lf.jpg",
-        "../resources/fireskybox/vulcan_rt.jpg"
+        "../../00-main/resources/1-volcano/fireskybox/vulcan_bk.jpg",
+        "../../00-main/resources/1-volcano/fireskybox/vulcan_ft.jpg",
+        "../../00-main/resources/1-volcano/fireskybox/vulcan_up.jpg",
+        "../../00-main/resources/1-volcano/fireskybox/vulcan_dn.jpg",
+        "../../00-main/resources/1-volcano/fireskybox/vulcan_lf.jpg",
+        "../../00-main/resources/1-volcano/fireskybox/vulcan_rt.jpg"
     };
     CubemapTexture skyboxTexture = CubemapTexture(faces);
     unsigned int VAOskybox, VBOskybox;

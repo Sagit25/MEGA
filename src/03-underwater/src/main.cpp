@@ -59,7 +59,7 @@ bool useSpecular = false;
 
 bool useLighting = true;
 bool useShadow = true;
-bool usePCF = false;
+bool usePCF = true;
 
 int main()
 {
@@ -118,30 +118,30 @@ int main()
     // (1) diffuse, specular, normal : brickCubeModel
     // (2) diffuse, normal only : boulderModel
     // (3) diffuse only : grassGroundModel
-    AnimationModel bassModel = AnimationModel("../resources/fish/bass/bass.dae", true, false);
-    Animation bassAnimation("../resources/fish/bass/bass.dae", &bassModel);
+    AnimationModel bassModel = AnimationModel("../../00-main/resources/3-underwater/fish/bass/bass.dae", true, false);
+    Animation bassAnimation("../../00-main/resources/3-underwater/fish/bass/bass.dae", &bassModel);
 	Animator bassAnimator(&bassAnimation);
     bassModel.animator = &bassAnimator;
     bassModel.radius *= 0.7;
     bassModel.length *= 0.7;
     bassAnimation.SetDuration(1670.0);
 
-    AnimationModel sharkModel = AnimationModel("../resources/fish/shark/shark.dae", true, false);
-    Animation sharkAnimation("../resources/fish/shark/shark.dae", &sharkModel);
+    AnimationModel sharkModel = AnimationModel("../../00-main/resources/3-underwater/fish/shark/shark.dae", true, false);
+    Animation sharkAnimation("../../00-main/resources/3-underwater/fish/shark/shark.dae", &sharkModel);
 	Animator sharkAnimator(&sharkAnimation);
     sharkModel.animator = &sharkAnimator;
     sharkModel.radius *= 2;
     sharkModel.length *= 2;
 
-    Model shellModel = Model("../resources/seashell/seashell1/seashell1.obj");
-    Model shell2Model = Model("../resources/seashell/seashell2/seashell2.obj");
-    Model pebbleModel = Model("../resources/seashell/pebble/pebble.obj");
-    Model boatModel = Model("../resources/wooden_boat/wooden_boat.obj");
+    Model shellModel = Model("../../00-main/resources/3-underwater/seashell/seashell1/seashell1.obj");
+    Model shell2Model = Model("../../00-main/resources/3-underwater/seashell/seashell2/seashell2.obj");
+    Model pebbleModel = Model("../../00-main/resources/3-underwater/seashell/pebble/pebble.obj");
+    Model boatModel = Model("../../00-main/resources/3-underwater/wooden_boat/wooden_boat.obj");
 
-    Model floorModel = Model("../resources/mountain/mountain.obj", true);
-    Model houseModel = Model("../../00-main/resources/room/Warehouse.obj", false, false);
-    Model sofaModel = Model("../../00-main/resources/sofa/sofa.obj", false, false);
-    Model tableModel = Model("../../00-main/resources/table/Center Table.obj", false, false);
+    Model floorModel = Model("../../00-main/resources/3-underwater/mountain/mountain.obj", true);
+    Model houseModel = Model("../../00-main/resources/0-main/room/Warehouse.obj", false, false);
+    Model sofaModel = Model("../../00-main/resources/0-main/sofa/sofa.obj", false, false);
+    Model tableModel = Model("../../00-main/resources/0-main/table/Center Table.obj", false, false);
 
     // Add entities to scene.
     // you can change the position/orientation.
@@ -260,7 +260,7 @@ int main()
     lightingShader.setVec2("houseEffectMax", 6.0f, 4.0f);
 
     const int causticFrameCount = 32;
-    const char* causticFrameDirectory = "../resources/caustics/caustic_frames";
+    const char* causticFrameDirectory = "../../00-main/resources/3-underwater/caustics/caustic_frames";
     CausticTexture causticTexture(causticFrameDirectory, causticFrameCount);
 
     DirectionalLight sun(-90.0f, 45.0f, glm::vec3(1.0f));

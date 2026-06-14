@@ -38,6 +38,8 @@ bool isKeyboardDone[1024] = { 0 };
 // setting
 const unsigned int SCR_WIDTH = 1920;
 const unsigned int SCR_HEIGHT = 1080;
+const unsigned int SHADOW_WIDTH = 2048;
+const unsigned int SHADOW_HEIGHT = 2048;
 
 int framebufferWidth = SCR_WIDTH;
 int framebufferHeight = SCR_HEIGHT;
@@ -136,6 +138,22 @@ void drawModelEntities(Shader& shader, const std::vector<Entity*>& entities)
     }
 }
 
+void drawShadowModelEntities(Shader& shader, const std::vector<Entity*>& entities)
+{
+    for (Entity* entity : entities) {
+        if (!entity || !entity->model) {
+            continue;
+        }
+
+        shader.setMat4("model", entity->getModelMatrix());
+
+        for (const SubMesh& subMesh : entity->model->subMeshes) {
+            glBindVertexArray(subMesh.mesh.VAO);
+            glDrawElements(GL_TRIANGLES, subMesh.mesh.indices.size(), GL_UNSIGNED_INT, 0);
+        }
+    }
+}
+
 int main()
 {
     std::cout << "Current main.cpp: hw5_real_final" << std::endl;
@@ -188,6 +206,7 @@ int main()
     Shader rayTracingShader("../shaders/shader_ray_tracing.vs", "../shaders/shader_ray_tracing.fs");
     Shader heatHazeShader("../shaders/shader_ray_tracing.vs", "../shaders/shader_heat_haze.fs");
     Shader desertModelShader("../shaders/shader_desert_model.vs", "../shaders/shader_desert_model.fs");
+    Shader shadowShader("../shaders/shadow.vs", "../shaders/shadow.fs");
 
     std::vector<float> quad_data({
         // positions         // uvs
@@ -205,21 +224,21 @@ int main()
     // Original skybox data (works well)
     //std::vector<std::string> faces
     //{
-    //    "../resources/skybox/right.jpg",
-    //    "../resources/skybox/left.jpg",
-    //    "../resources/skybox/top.jpg",
-    //    "../resources/skybox/bottom.jpg",
-    //    "../resources/skybox/front.jpg",
-    //    "../resources/skybox/back.jpg"
+    //    "../../00-main/resources/2-desert/skybox/right.jpg",
+    //    "../../00-main/resources/2-desert/skybox/left.jpg",
+    //    "../../00-main/resources/2-desert/skybox/top.jpg",
+    //    "../../00-main/resources/2-desert/skybox/bottom.jpg",
+    //    "../../00-main/resources/2-desert/skybox/front.jpg",
+    //    "../../00-main/resources/2-desert/skybox/back.jpg"
     //};
     std::vector<std::string> faces
     {
-        "../resources/desert_day/sky_posx.jpg",
-        "../resources/desert_day/sky_negx.jpg",
-        "../resources/desert_day/sky_posy.jpg",
-        "../resources/desert_day/sky_negy.jpg",
-        "../resources/desert_day/sky_posz.jpg",
-        "../resources/desert_day/sky_negz.jpg"
+        "../../00-main/resources/2-desert/desert_day/sky_posx.jpg",
+        "../../00-main/resources/2-desert/desert_day/sky_negx.jpg",
+        "../../00-main/resources/2-desert/desert_day/sky_posy.jpg",
+        "../../00-main/resources/2-desert/desert_day/sky_negy.jpg",
+        "../../00-main/resources/2-desert/desert_day/sky_posz.jpg",
+        "../../00-main/resources/2-desert/desert_day/sky_negz.jpg"
     };
     CubemapTexture skyboxTexture = CubemapTexture(faces);
 
@@ -227,12 +246,12 @@ int main()
 
 
     // [Project] Texture added
-    Texture objectTex("../resources/pyramid/sandstone_diff.jpg");
-    Texture groundTex("../resources/pyramid/desert_sand_floor.jpg");
+    Texture objectTex("../../00-main/resources/2-desert/pyramid/sandstone_diff.jpg");
+    Texture groundTex("../../00-main/resources/2-desert/pyramid/desert_sand_floor.jpg");
 
-    Model houseModel("../../00-main/resources/room/Warehouse.obj");
-    Model sofaModel("../../00-main/resources/sofa/sofa.obj");
-    Model tableModel("../../00-main/resources/table/Center Table.obj");
+    Model houseModel("../../00-main/resources/0-main/room/Warehouse.obj");
+    Model sofaModel("../../00-main/resources/0-main/sofa/sofa.obj");
+    Model tableModel("../../00-main/resources/0-main/table/Center Table.obj");
 
     std::vector<Entity*> houseEntities;
     const glm::vec3 mainCameraStart = glm::vec3(0.0f, 1.5f, 0.5f);
@@ -251,6 +270,8 @@ int main()
     houseEntities.push_back(new Entity(&houseModel, housePosition, 0.0f, 90.0f, 0.0f, 1.0f));
     houseEntities.push_back(new Entity(&sofaModel, rotateInHouse(mapMainPosition(glm::vec3(-0.5f, 0.1f, -3.5f) + mainSceneOffset)), 0.0f, furnitureTurnY, 0.0f, 0.5f));
     houseEntities.push_back(new Entity(&tableModel, rotateInHouse(mapMainPosition(glm::vec3(4.5f, 0.0f, -3.0f) + mainSceneOffset)), 0.0f, furnitureTurnY, 0.0f, 1.2f));
+
+    DepthMapTexture depth = DepthMapTexture(SHADOW_WIDTH, SHADOW_HEIGHT);
 
     unsigned int vs_ubo = glGetUniformBlockIndex(rayTracingShader.ID, "mesh_vertices_ubo");
     glUniformBlockBinding(rayTracingShader.ID, vs_ubo, 0);
@@ -281,8 +302,12 @@ int main()
 
     desertModelShader.use();
     desertModelShader.setInt("diffuseTexture", 0);
-    desertModelShader.setVec3("light.dir", getDirectionalLightDir(-90.0f, 45.0f));
+    desertModelShader.setInt("depthMapSampler", 3);
+    glm::vec3 houseLightDir = getDirectionalLightDir(-90.0f, 45.0f);
+    desertModelShader.setVec3("light.dir", houseLightDir);
     desertModelShader.setVec3("light.color", glm::vec3(1.0f));
+    desertModelShader.setFloat("useShadow", 1.0f);
+    desertModelShader.setFloat("usePCF", 1.0f);
 
     glm::mat4 viewMatBefore = camera.GetViewMatrix();
     float zoomBefore = camera.Zoom;
@@ -300,6 +325,24 @@ int main()
 
         // [Project] Animate temperature change
         groundTemp = getGroundTempAtTime(temperatureTime);
+
+        glm::mat4 lightProjection = glm::ortho(-20.0f, 20.0f, -20.0f, 20.0f, 0.1f, 80.0f);
+        glm::mat4 lightView = glm::lookAt(
+            housePosition - houseLightDir * 30.0f,
+            housePosition,
+            glm::vec3(0.0f, 1.0f, 0.0f)
+        );
+        glm::mat4 lightSpaceMatrix = lightProjection * lightView;
+
+        glEnable(GL_DEPTH_TEST);
+        glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
+        glBindFramebuffer(GL_FRAMEBUFFER, depth.depthMapFBO);
+        glClear(GL_DEPTH_BUFFER_BIT);
+
+        shadowShader.use();
+        shadowShader.setMat4("lightSpaceMatrix", lightSpaceMatrix);
+        drawShadowModelEntities(shadowShader, houseEntities);
+        glDisable(GL_DEPTH_TEST);
 
         rayTracingShader.use();
         rayTracingShader.setFloat("H", framebufferHeight);
@@ -357,6 +400,9 @@ int main()
         glm::mat4 view = camera.GetViewMatrix();
         desertModelShader.setMat4("projection", projection);
         desertModelShader.setMat4("view", view);
+        desertModelShader.setMat4("lightSpaceMatrix", lightSpaceMatrix);
+        glActiveTexture(GL_TEXTURE3);
+        glBindTexture(GL_TEXTURE_2D, depth.ID);
         drawModelEntities(desertModelShader, houseEntities);
 
         glDisable(GL_DEPTH_TEST);
