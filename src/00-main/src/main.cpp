@@ -114,9 +114,9 @@ int main()
 
     // build and compile our shader program
     // ------------------------------------
-    Shader lightingShader("../shaders/shader_lighting.vs", "../shaders/shader_lighting.fs"); // you can name your shader files however you like
-    Shader shadowShader("../shaders/shadow.vs", "../shaders/shadow.fs");
-    Shader skyboxShader("../shaders/shader_skybox.vs", "../shaders/shader_skybox.fs");
+    Shader lightingShader("../shaders/shared/shader_lighting.vs", "../shaders/shared/shader_lighting.fs"); // you can name your shader files however you like
+    Shader shadowShader("../shaders/shared/shadow.vs", "../shaders/shared/shadow.fs");
+    Shader skyboxShader("../shaders/shared/shader_skybox.vs", "../shaders/shared/shader_skybox.fs");
 
 
     // define models

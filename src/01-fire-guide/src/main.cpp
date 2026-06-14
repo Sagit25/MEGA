@@ -356,9 +356,9 @@ int main()
 
     // build and compile our shader program
     // ------------------------------------
-    Shader lightingShader("../shaders/shader_lighting.vs", "../shaders/shader_lighting.fs"); // you can name your shader files however you like
-    Shader shadowShader("../shaders/shadow.vs", "../shaders/shadow.fs");
-    Shader skyboxShader("../shaders/shader_skybox.vs", "../shaders/shader_skybox.fs");
+    Shader lightingShader("../../00-main/shaders/shared/shader_lighting.vs", "../../00-main/shaders/shared/shader_lighting.fs"); // you can name your shader files however you like
+    Shader shadowShader("../../00-main/shaders/shared/shadow.vs", "../../00-main/shaders/shared/shadow.fs");
+    Shader skyboxShader("../../00-main/shaders/shared/shader_skybox.vs", "../../00-main/shaders/shared/shader_skybox.fs");
     Shader particleShader("../shaders/particle.vs", "../shaders/particle.fs");
 
     // define models
@@ -646,20 +646,28 @@ int main()
                 lightingShader.setMat4("world", modelMatrix);
 
                 for (const SubMesh& subMesh : model->subMeshes) {
+                    lightingShader.setVec3("baseColor", subMesh.baseColor);
+                    lightingShader.setFloat("useDiffuseMap", subMesh.diffuse ? 1.0f : 0.0f);
                     lightingShader.setFloat("useSpecularMap", subMesh.specular ? 1.0f : 0.0f);
                     lightingShader.setFloat("useNormalMap", (subMesh.normal && useNormalMap) ? 1.0f : 0.0f);
 
+                    glActiveTexture(GL_TEXTURE0);
                     if (subMesh.diffuse) {
-                        glActiveTexture(GL_TEXTURE0);
                         glBindTexture(GL_TEXTURE_2D, subMesh.diffuse->ID);
+                    } else {
+                        glBindTexture(GL_TEXTURE_2D, Texture::GetDummyTexture());
                     }
+                    glActiveTexture(GL_TEXTURE1);
                     if (subMesh.specular) {
-                        glActiveTexture(GL_TEXTURE1);
                         glBindTexture(GL_TEXTURE_2D, subMesh.specular->ID);
+                    } else {
+                        glBindTexture(GL_TEXTURE_2D, Texture::GetDummyTexture());
                     }
+                    glActiveTexture(GL_TEXTURE2);
                     if (subMesh.normal && useNormalMap) {
-                        glActiveTexture(GL_TEXTURE2);
                         glBindTexture(GL_TEXTURE_2D, subMesh.normal->ID);
+                    } else {
+                        glBindTexture(GL_TEXTURE_2D, Texture::GetDummyTexture());
                     }
 
                     glBindVertexArray(subMesh.mesh.VAO);

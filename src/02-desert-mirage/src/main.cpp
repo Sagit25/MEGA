@@ -127,10 +127,18 @@ void drawModelEntities(Shader& shader, const std::vector<Entity*>& entities)
 
         for (const SubMesh& subMesh : entity->model->subMeshes) {
             shader.setFloat("useDiffuseMap", subMesh.diffuse ? 1.0f : 0.0f);
+            shader.setFloat("useSpecularMap", 0.0f);
+            shader.setFloat("useNormalMap", 0.0f);
             shader.setVec3("baseColor", subMesh.baseColor);
 
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, subMesh.diffuse ? subMesh.diffuse->ID : Texture::GetDummyTexture());
+
+            glActiveTexture(GL_TEXTURE1);
+            glBindTexture(GL_TEXTURE_2D, Texture::GetDummyTexture());
+
+            glActiveTexture(GL_TEXTURE2);
+            glBindTexture(GL_TEXTURE_2D, Texture::GetDummyTexture());
 
             glBindVertexArray(subMesh.mesh.VAO);
             glDrawElements(GL_TRIANGLES, subMesh.mesh.indices.size(), GL_UNSIGNED_INT, 0);
@@ -205,8 +213,8 @@ int main()
     // ------------------------------------
     Shader rayTracingShader("../shaders/shader_ray_tracing.vs", "../shaders/shader_ray_tracing.fs");
     Shader heatHazeShader("../shaders/shader_ray_tracing.vs", "../shaders/shader_heat_haze.fs");
-    Shader desertModelShader("../shaders/shader_desert_model.vs", "../shaders/shader_desert_model.fs");
-    Shader shadowShader("../shaders/shadow.vs", "../shaders/shadow.fs");
+    Shader lightingShader("../../00-main/shaders/shared/shader_lighting.vs", "../../00-main/shaders/shared/shader_lighting.fs");
+    Shader shadowShader("../../00-main/shaders/shared/shadow.vs", "../../00-main/shaders/shared/shadow.fs");
 
     std::vector<float> quad_data({
         // positions         // uvs
@@ -300,14 +308,18 @@ int main()
     heatHazeShader.setFloat("hazeAmount", 0.0f);
     heatHazeShader.setFloat("groundTemp", groundTemp);
 
-    desertModelShader.use();
-    desertModelShader.setInt("diffuseTexture", 0);
-    desertModelShader.setInt("depthMapSampler", 3);
+    lightingShader.use();
+    lightingShader.setInt("material.diffuseSampler", 0);
+    lightingShader.setInt("material.specularSampler", 1);
+    lightingShader.setInt("material.normalSampler", 2);
+    lightingShader.setInt("depthMapSampler", 3);
+    lightingShader.setFloat("material.shininess", 32.0f);
     glm::vec3 houseLightDir = getDirectionalLightDir(-90.0f, 45.0f);
-    desertModelShader.setVec3("light.dir", houseLightDir);
-    desertModelShader.setVec3("light.color", glm::vec3(1.0f));
-    desertModelShader.setFloat("useShadow", 1.0f);
-    desertModelShader.setFloat("usePCF", 1.0f);
+    lightingShader.setVec3("light.dir", houseLightDir);
+    lightingShader.setVec3("light.color", glm::vec3(1.0f));
+    lightingShader.setFloat("useShadow", 1.0f);
+    lightingShader.setFloat("useLighting", 1.0f);
+    lightingShader.setFloat("usePCF", 1.0f);
 
     glm::mat4 viewMatBefore = camera.GetViewMatrix();
     float zoomBefore = camera.Zoom;
@@ -395,15 +407,16 @@ int main()
         glDepthMask(GL_TRUE);
         glClear(GL_DEPTH_BUFFER_BIT);
 
-        desertModelShader.use();
+        lightingShader.use();
         glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), static_cast<float>(framebufferWidth) / static_cast<float>(framebufferHeight), 0.1f, 100.0f);
         glm::mat4 view = camera.GetViewMatrix();
-        desertModelShader.setMat4("projection", projection);
-        desertModelShader.setMat4("view", view);
-        desertModelShader.setMat4("lightSpaceMatrix", lightSpaceMatrix);
+        lightingShader.setVec3("viewPos", camera.Position);
+        lightingShader.setMat4("projection", projection);
+        lightingShader.setMat4("view", view);
+        lightingShader.setMat4("lightSpaceMatrix", lightSpaceMatrix);
         glActiveTexture(GL_TEXTURE3);
         glBindTexture(GL_TEXTURE_2D, depth.ID);
-        drawModelEntities(desertModelShader, houseEntities);
+        drawModelEntities(lightingShader, houseEntities);
 
         glDisable(GL_DEPTH_TEST);
 
