@@ -30,6 +30,7 @@ public:
 
     AnimationModel(const char* filePath, bool ignoreShadow = false, bool uvFlip = true)
     {
+        this->ignoreShadow = ignoreShadow;
         loadModel(filePath, uvFlip);
         setModelSize();
     }
