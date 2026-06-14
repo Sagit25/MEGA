@@ -14,7 +14,7 @@ public:
     unsigned int vertexNumber = 0;
 };
 
-VAO* getVAOFromAttribData(const std::vector<float>& attrib_data, const std::vector<unsigned int>& attrib_sizes,
+inline VAO* getVAOFromAttribData(const std::vector<float>& attrib_data, const std::vector<unsigned int>& attrib_sizes,
     const std::vector<unsigned int>& indices_data = std::vector<unsigned int>())
 {
     VAO* vao = new VAO();
@@ -53,7 +53,7 @@ VAO* getVAOFromAttribData(const std::vector<float>& attrib_data, const std::vect
     return vao;
 }
 
-void getPositionVAO(const float* vertices, unsigned int size, unsigned int& VAO, unsigned int& VBO)
+inline void getPositionVAO(const float* vertices, unsigned int size, unsigned int& VAO, unsigned int& VBO)
 {
     glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO);

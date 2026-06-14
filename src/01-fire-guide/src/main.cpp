@@ -11,6 +11,7 @@
 #include "../../00-main/src/shared/geometry_primitives.h"
 #include <iostream>
 #include <vector>
+#include <functional>
 #include "../../00-main/src/shared/camera.h"
 #include "../../00-main/src/shared/texture.h"
 #include "../../00-main/src/shared/texture_cube.h"
@@ -24,15 +25,25 @@
 #include <cstdlib>
 #include <ctime>
 #include <cmath>
+#include "../../00-main/src/shared/scene_module.h"
 
+
+namespace Scene01 {
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 void processInput(GLFWwindow* window, DirectionalLight* sun);
+void getCameraPose(SceneCameraPose* pose);
+void getDefaultCameraPose(SceneCameraPose* pose);
+void setCameraPose(const SceneCameraPose& pose);
 
 bool isWindowed = true;
 bool isKeyboardDone[1024] = { 0 };
+
+static bool initialized = false;
+static std::function<void(GLFWwindow*)> renderFrameImpl;
+static std::function<void(GLFWwindow*)> onEnterImpl;
 
 // setting
 const unsigned int SCR_WIDTH = 1920;
@@ -48,7 +59,10 @@ const glm::vec3 fireSceneOffset = glm::vec3(-4.0f, 0.0f, -45.0f);
 const float flightSpeed = 1.5f;
 
 // camera
-Camera camera(glm::vec3(0.0f, 1.5f, 0.5f));
+const glm::vec3 CAMERA_INITIAL_POS = glm::vec3(0.0f, 1.5f, 0.5f);
+const float CAMERA_INITIAL_YAW = -90.0f;
+const float CAMERA_INITIAL_PITCH = 0.0f;
+Camera camera(CAMERA_INITIAL_POS, glm::vec3(0.0f, 1.0f, 0.0f), CAMERA_INITIAL_YAW, CAMERA_INITIAL_PITCH);
 float lastX = SCR_WIDTH / 2.0f;
 float lastY = SCR_HEIGHT / 2.0f;
 bool firstMouse = true;
@@ -310,73 +324,37 @@ glm::mat4 getDragonFlightModelMatrix(float time)
     return transform;
 }
 
-int main()
+void init(GLFWwindow* window)
 {
+    if (initialized) return;
+    initialized = true;
     std::srand(static_cast<unsigned int>(std::time(nullptr)));
-
-    glfwInit();
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-
-#ifdef __APPLE__
-    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-#endif
-
-        // glfw window creation
-    // --------------------
-    GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "LearnOpenGL", NULL, NULL);
-    if (window == NULL)
-    {
-        std::cout << "Failed to create GLFW window" << std::endl;
-        glfwTerminate();
-        return -1;
-    }
-    glfwMakeContextCurrent(window);
-    glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
-    glfwSetCursorPosCallback(window, mouse_callback);
-    glfwSetScrollCallback(window, scroll_callback);
-
-    // tell GLFW to capture our mouse
-    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-
-    // glad: load all OpenGL function pointers
-    // ---------------------------------------
-    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
-    {
-        std::cout << "Failed to initialize GLAD" << std::endl;
-        return -1;
-    }
-
     glfwGetFramebufferSize(window, &framebufferWidth, &framebufferHeight);
-
-    // configure global opengl state
-    // -----------------------------
     glEnable(GL_DEPTH_TEST);
 
     // build and compile our shader program
     // ------------------------------------
-    Shader lightingShader("../../00-main/shaders/shared/shader_lighting.vs", "../../00-main/shaders/shared/shader_lighting.fs"); // you can name your shader files however you like
-    Shader shadowShader("../../00-main/shaders/shared/shadow.vs", "../../00-main/shaders/shared/shadow.fs");
-    Shader skyboxShader("../../00-main/shaders/shared/shader_skybox.vs", "../../00-main/shaders/shared/shader_skybox.fs");
-    Shader particleShader("../../00-main/shaders/1-volcano/particle.vs", "../../00-main/shaders/1-volcano/particle.fs");
+    static Shader lightingShader("../../00-main/shaders/shared/shader_lighting.vs", "../../00-main/shaders/shared/shader_lighting.fs"); // you can name your shader files however you like
+    static Shader shadowShader("../../00-main/shaders/shared/shadow.vs", "../../00-main/shaders/shared/shadow.fs");
+    static Shader skyboxShader("../../00-main/shaders/shared/shader_skybox.vs", "../../00-main/shaders/shared/shader_skybox.fs");
+    static Shader particleShader("../../00-main/shaders/1-volcano/particle.vs", "../../00-main/shaders/1-volcano/particle.fs");
 
     // define models
-    Model toothlessModel = Model("../../00-main/resources/1-volcano/toothless/toothless.obj");
-    Model boulderModel("../../00-main/resources/1-volcano/boulder/boulder.obj");
+    static Model toothlessModel = Model("../../00-main/resources/1-volcano/toothless/toothless.obj");
+    static Model boulderModel("../../00-main/resources/1-volcano/boulder/boulder.obj");
     boulderModel.setDiffuse("../../00-main/resources/1-volcano/boulder/boulder_d.png");
     boulderModel.setNormal("../../00-main/resources/1-volcano/boulder/boulder_n.png");
-    Model airplane1Model("../../00-main/resources/1-volcano/airplane1/11803_Airplane_v1_l1.obj");
-    Model airplane2Model("../../00-main/resources/1-volcano/airplane2/11804_Airplane_v2_l2.obj");
-    Model dragonModel("../../00-main/resources/1-volcano/dragon/dragon.obj");
+    static Model airplane1Model("../../00-main/resources/1-volcano/airplane1/11803_Airplane_v1_l1.obj");
+    static Model airplane2Model("../../00-main/resources/1-volcano/airplane2/11804_Airplane_v2_l2.obj");
+    static Model dragonModel("../../00-main/resources/1-volcano/dragon/dragon.obj");
     dragonModel.setDiffuse("../../00-main/resources/1-volcano/dragon/textures/Dragon_Bump_Col2.jpg");
     dragonModel.setNormal("../../00-main/resources/1-volcano/dragon/textures/Dragon_Nor.jpg");
-    Model houseModel = Model("../../00-main/resources/0-main/room/Warehouse.obj");
-    Model sofaModel = Model("../../00-main/resources/0-main/sofa/sofa.obj");
-    Model tableModel = Model("../../00-main/resources/0-main/table/Center Table.obj");
+    static Model houseModel = Model("../../00-main/resources/0-main/room/Warehouse.obj");
+    static Model sofaModel = Model("../../00-main/resources/0-main/sofa/sofa.obj");
+    static Model tableModel = Model("../../00-main/resources/0-main/table/Center Table.obj");
 
     // Add entities to scene.
-    Scene scene;
+    static Scene scene;
 
     const glm::vec3 housePosition = glm::vec3(0.0f, 0.0f, 0.0f);
     const float furnitureTurnY = 180.0f;
@@ -389,16 +367,16 @@ int main()
     scene.addEntity(new Entity(&sofaModel, rotateInHouse(glm::vec3(-2.5f, 0.1f, 0.5f)), 0.0f, furnitureTurnY, 0.0f, 0.5f));
     scene.addEntity(new Entity(&tableModel, rotateInHouse(glm::vec3(2.5f, 0.0f, 1.0f)), 0.0f, furnitureTurnY, 0.0f, 1.2f));
 
-    Entity* toothlessEntity = new Entity(&toothlessModel, glm::vec3(1.0f, -3.0f, 1.0f) + fireSceneOffset, -90.0f, 180.0f, 0.0f, 0.05f);
+    static Entity* toothlessEntity = new Entity(&toothlessModel, glm::vec3(1.0f, -3.0f, 1.0f) + fireSceneOffset, -90.0f, 180.0f, 0.0f, 0.05f);
     scene.addEntity(toothlessEntity);
 
-    Entity* dragonEntity = new Entity(&dragonModel, glm::mat4(1.0f));
+    static Entity* dragonEntity = new Entity(&dragonModel, glm::mat4(1.0f));
     scene.addEntity(dragonEntity);
 
-    FireParticleSystem fireParticles(particleShader, 17000);
-    MeteorParticleSystem meteorParticles(particleShader, 5000);
+    static FireParticleSystem fireParticles(particleShader, 17000);
+    static MeteorParticleSystem meteorParticles(particleShader, 5000);
 
-    std::vector<Meteor> meteors;
+    static std::vector<Meteor> meteors;
     const unsigned int maxMeteors = 8;
     for (unsigned int i = 0; i < maxMeteors; ++i) {
         Entity* meteorEntity = new Entity(&boulderModel, glm::mat4(1.0f));
@@ -409,10 +387,10 @@ int main()
         meteor.entity = meteorEntity;
         meteors.push_back(meteor);
     }
-    float nextMeteorSpawnTime = 0.5f;
+    static float nextMeteorSpawnTime = 0.5f;
 
-    std::vector<Airplane> airplanes;
-    Entity* airplane1Entity = new Entity(&airplane1Model, glm::mat4(1.0f));
+    static std::vector<Airplane> airplanes;
+    static Entity* airplane1Entity = new Entity(&airplane1Model, glm::mat4(1.0f));
     airplane1Entity->visible = false;
     scene.addEntity(airplane1Entity);
     Airplane airplane1;
@@ -420,17 +398,17 @@ int main()
     airplane1.scale = 0.003f;
     airplanes.push_back(airplane1);
 
-    Entity* airplane2Entity = new Entity(&airplane2Model, glm::mat4(1.0f));
+    static Entity* airplane2Entity = new Entity(&airplane2Model, glm::mat4(1.0f));
     airplane2Entity->visible = false;
     scene.addEntity(airplane2Entity);
     Airplane airplane2;
     airplane2.entity = airplane2Entity;
     airplane2.scale = 0.009f;
     airplanes.push_back(airplane2);
-    float nextAirplaneSpawnTime = 3.0f;
+    static float nextAirplaneSpawnTime = 3.0f;
 
     // define depth texture
-    DepthMapTexture depth = DepthMapTexture(SHADOW_WIDTH, SHADOW_HEIGHT);
+    static DepthMapTexture depth = DepthMapTexture(SHADOW_WIDTH, SHADOW_HEIGHT);
 
     // skybox (fire)
     std::vector<std::string> faces {
@@ -441,8 +419,8 @@ int main()
         "../../00-main/resources/1-volcano/fireskybox/vulcan_lf.jpg",
         "../../00-main/resources/1-volcano/fireskybox/vulcan_rt.jpg"
     };
-    CubemapTexture skyboxTexture = CubemapTexture(faces);
-    unsigned int VAOskybox, VBOskybox;
+    static CubemapTexture skyboxTexture = CubemapTexture(faces);
+    static unsigned int VAOskybox = 0, VBOskybox = 0;
     getPositionVAO(skybox_positions, sizeof(skybox_positions), VAOskybox, VBOskybox);
 
     lightingShader.use();
@@ -455,16 +433,34 @@ int main()
     skyboxShader.use();
     skyboxShader.setInt("skyboxTexture1", 0);
 
-    DirectionalLight sun(-90.0f, 45.0f, glm::vec3(1.0f));
+    static DirectionalLight sun(-90.0f, 45.0f, glm::vec3(1.0f));
 
-    float oldTime = static_cast<float>(glfwGetTime());
-    float flightTime = 0.0f;
-    while (!glfwWindowShouldClose(window)) // render loop
-    {
+    static float oldTime = static_cast<float>(glfwGetTime());
+    static float flightTime = 0.0f;
+    
+
+    onEnterImpl = [&](GLFWwindow* window) {
+        oldTime = static_cast<float>(glfwGetTime());
+        firstMouse = true;
+        flightTime = 0.0f;
+        nextMeteorSpawnTime = oldTime + 0.5f;
+        nextAirplaneSpawnTime = oldTime + 3.0f;
+        for (Meteor& meteor : meteors) { meteor.active = false; if (meteor.entity) meteor.entity->visible = false; }
+        for (Airplane& airplane : airplanes) { airplane.active = false; if (airplane.entity) airplane.entity->visible = false; }
+    };
+
+    renderFrameImpl = [&](GLFWwindow* window) {
+
         float currentTime = static_cast<float>(glfwGetTime());
         float dt = currentTime - oldTime;
         deltaTime = dt;
         oldTime = currentTime;
+
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glEnable(GL_DEPTH_TEST);
+        glDepthMask(GL_TRUE);
+        glDepthFunc(GL_LESS);
+        glDisable(GL_BLEND);
 
         // input
         processInput(window, &sun);
@@ -696,14 +692,95 @@ int main()
         fireParticles.Draw(camera);
         meteorParticles.Draw(camera);
 
-        // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
         // -------------------------------------------------------------------------------
+    };
+}
+
+void onEnter(GLFWwindow* window)
+{
+    if (onEnterImpl) onEnterImpl(window);
+}
+
+void renderFrame(GLFWwindow* window)
+{
+    if (renderFrameImpl) renderFrameImpl(window);
+}
+
+SceneModule getModule()
+{
+    return { "Scene01", init, onEnter, renderFrame, framebuffer_size_callback, mouse_callback, scroll_callback, getCameraPose, getDefaultCameraPose, setCameraPose };
+}
+
+int runStandalone()
+{
+    glfwInit();
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+#ifdef __APPLE__
+    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+#endif
+
+    GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "LearnOpenGL", NULL, NULL);
+    if (window == NULL) {
+        std::cout << "Failed to create GLFW window" << std::endl;
+        glfwTerminate();
+        return -1;
+    }
+    glfwMakeContextCurrent(window);
+    glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+    glfwSetCursorPosCallback(window, mouse_callback);
+    glfwSetScrollCallback(window, scroll_callback);
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+
+    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
+        std::cout << "Failed to initialize GLAD" << std::endl;
+        return -1;
+    }
+
+    init(window);
+    onEnter(window);
+    while (!glfwWindowShouldClose(window)) {
+        renderFrame(window);
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
+
     glfwTerminate();
     return 0;
 }
+
+
+void getCameraPose(SceneCameraPose* pose)
+{
+    if (!pose) return;
+    pose->positionX = camera.Position.x;
+    pose->positionY = camera.Position.y;
+    pose->positionZ = camera.Position.z;
+    pose->yaw = camera.Yaw;
+    pose->pitch = camera.Pitch;
+    pose->zoom = camera.Zoom;
+}
+
+void getDefaultCameraPose(SceneCameraPose* pose)
+{
+    if (!pose) return;
+    pose->positionX = CAMERA_INITIAL_POS.x;
+    pose->positionY = CAMERA_INITIAL_POS.y;
+    pose->positionZ = CAMERA_INITIAL_POS.z;
+    pose->yaw = CAMERA_INITIAL_YAW;
+    pose->pitch = CAMERA_INITIAL_PITCH;
+    pose->zoom = ZOOM;
+}
+
+void setCameraPose(const SceneCameraPose& pose)
+{
+    camera.Position = glm::vec3(pose.positionX, pose.positionY, pose.positionZ);
+    camera.Zoom = pose.zoom;
+    camera.SetAngles(pose.yaw, pose.pitch);
+    firstMouse = true;
+}
+
 
 // process all input: query GLFW whether relevant keys are pressed/released this frame and react accordingly
 // ---------------------------------------------------------------------------------------------------------
@@ -831,3 +908,12 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 {
     camera.ProcessMouseScroll(yoffset);
 }
+
+} // namespace Scene01
+
+#ifndef COMBINED_SCENE_APP
+int main()
+{
+    return Scene01::runStandalone();
+}
+#endif

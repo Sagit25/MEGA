@@ -1,525 +1,153 @@
-#define GLM_ENABLE_EXPERIMENTAL
-#define MIN(X,Y) ((X) < (Y) ? (X) : (Y))
-#define MAX(X,Y) ((X) > (Y) ? (X) : (Y))
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
-#include <glm/glm.hpp>
-#include <glm/gtx/transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
-#include "shared/shader.h"
-#include "shared/opengl_utils.h"
-#include "shared/geometry_primitives.h"
+
 #include <iostream>
 #include <vector>
-#include "shared/camera.h"
-#include "shared/texture.h"
-#include "shared/texture_cube.h"
-#include "shared/model.h"
-#include "shared/mesh.h"
-#include "shared/scene.h"
-#include "shared/math_utils.h"
-#include "shared/light.h"
 
-void framebuffer_size_callback(GLFWwindow* window, int width, int height);
-void mouse_callback(GLFWwindow* window, double xpos, double ypos);
-void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
-void processInput(GLFWwindow* window, DirectionalLight* sun);
-void applyIntroCameraAnimation(float elapsedTime);
-void setCameraPose(const glm::vec3& position, float yaw, float pitch);
+#include "shared/scene_module.h"
 
-bool isWindowed = true;
-bool isKeyboardDone[1024] = { 0 };
-
-// setting
 const unsigned int SCR_WIDTH = 1920;
 const unsigned int SCR_HEIGHT = 1080;
-const unsigned int SHADOW_WIDTH = 2048;
-const unsigned int SHADOW_HEIGHT = 2048;
-const float planeSize = 15.f;
 
-int framebufferWidth = SCR_WIDTH;
-int framebufferHeight = SCR_HEIGHT;
+namespace Scene00 { SceneModule getModule(); }
+namespace Scene01 { SceneModule getModule(); }
+namespace Scene02 { SceneModule getModule(); }
+namespace Scene03 { SceneModule getModule(); }
 
-// camera
-const glm::vec3 INTRO_CAMERA_START_POS = glm::vec3(0.0f, 1.5f, 0.5f);
-const glm::vec3 INTRO_CAMERA_TARGET_POS = glm::vec3(-7.0f, 1.5f, 0.5f);
-const float INTRO_CAMERA_START_YAW = -90.0f;
-const float INTRO_CAMERA_TARGET_YAW = -180.0f;
-const float INTRO_CAMERA_PITCH = 0.0f;
-const float INTRO_HOLD_START_END = 2.0f;
-const float INTRO_ROTATE_END = 3.0f;
-const float INTRO_MOVE_END = 6.0f;
-const float INTRO_HOLD_FINAL_END = 7.0f;
-bool introCameraAnimationFinished = false;
+static std::vector<SceneModule> scenes;
+static int activeSceneIndex = 0;
+static bool sceneToggleDone = false;
 
-Camera camera(INTRO_CAMERA_START_POS, glm::vec3(0.0f, 1.0f, 0.0f), INTRO_CAMERA_START_YAW, INTRO_CAMERA_PITCH);
-float lastX = SCR_WIDTH / 2.0f;
-float lastY = SCR_HEIGHT / 2.0f;
-bool firstMouse = true;
+static SceneModule& activeScene()
+{
+    return scenes[activeSceneIndex];
+}
 
-// timing
-float deltaTime = 0.0f;	// time between current frame and last frame
-float lastFrame = 0.0f;
+static void framebuffer_size_callback(GLFWwindow* window, int width, int height)
+{
+    if (!scenes.empty() && activeScene().onFramebufferSize) {
+        activeScene().onFramebufferSize(window, width, height);
+    }
+}
 
-bool useNormalMap = true;
-bool useSpecular = false;
+static void mouse_callback(GLFWwindow* window, double xpos, double ypos)
+{
+    if (!scenes.empty() && activeScene().onMouse) {
+        activeScene().onMouse(window, xpos, ypos);
+    }
+}
 
-bool useLighting = true;
-bool useShadow = true;
-bool usePCF = true;
+static void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
+{
+    if (!scenes.empty() && activeScene().onScroll) {
+        activeScene().onScroll(window, xoffset, yoffset);
+    }
+}
+
+static void processSceneToggle(GLFWwindow* window)
+{
+    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
+        glfwSetWindowShouldClose(window, true);
+    }
+
+    bool pressed = glfwGetKey(window, GLFW_KEY_TAB) == GLFW_PRESS;
+    if (pressed && !sceneToggleDone) {
+        SceneModule& sourceScene = activeScene();
+        SceneCameraPose cameraPose{};
+        SceneCameraPose sourceDefaultPose{};
+        bool hasCameraPose = false;
+        bool hasSourceDefaultPose = false;
+        if (sourceScene.getCameraPose) {
+            sourceScene.getCameraPose(&cameraPose);
+            hasCameraPose = true;
+        }
+        if (sourceScene.getDefaultCameraPose) {
+            sourceScene.getDefaultCameraPose(&sourceDefaultPose);
+            hasSourceDefaultPose = true;
+        }
+
+        activeSceneIndex = (activeSceneIndex + 1) % static_cast<int>(scenes.size());
+        if (activeScene().onEnter) {
+            activeScene().onEnter(window);
+        }
+        if (hasCameraPose && activeScene().setCameraPose) {
+            SceneCameraPose targetPose = cameraPose;
+            SceneCameraPose targetDefaultPose{};
+            if (hasSourceDefaultPose && activeScene().getDefaultCameraPose) {
+                activeScene().getDefaultCameraPose(&targetDefaultPose);
+                targetPose.positionX = targetDefaultPose.positionX + (cameraPose.positionX - sourceDefaultPose.positionX);
+                targetPose.positionY = targetDefaultPose.positionY + (cameraPose.positionY - sourceDefaultPose.positionY);
+                targetPose.positionZ = targetDefaultPose.positionZ + (cameraPose.positionZ - sourceDefaultPose.positionZ);
+                targetPose.yaw = targetDefaultPose.yaw + (cameraPose.yaw - sourceDefaultPose.yaw);
+                targetPose.pitch = targetDefaultPose.pitch + (cameraPose.pitch - sourceDefaultPose.pitch);
+                targetPose.zoom = targetDefaultPose.zoom + (cameraPose.zoom - sourceDefaultPose.zoom);
+            }
+            activeScene().setCameraPose(targetPose);
+        }
+        std::cout << "Active scene: " << activeScene().name << std::endl;
+        sceneToggleDone = true;
+    }
+    if (!pressed) {
+        sceneToggleDone = false;
+    }
+}
 
 int main()
 {
-    // glfw: initialize and configure
-    // ------------------------------
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-
 #ifdef __APPLE__
-    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); // uncomment this statement to fix compilation on OS X
+    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 #endif
 
-    // glfw window creation
-    // --------------------
     GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "LearnOpenGL", NULL, NULL);
-    if (window == NULL)
-    {
+    if (window == NULL) {
         std::cout << "Failed to create GLFW window" << std::endl;
         glfwTerminate();
         return -1;
     }
+
     glfwMakeContextCurrent(window);
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
     glfwSetCursorPosCallback(window, mouse_callback);
     glfwSetScrollCallback(window, scroll_callback);
-
-    // tell GLFW to capture our mouse
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
-    // glad: load all OpenGL function pointers
-    // ---------------------------------------
-    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
-    {
+    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
         std::cout << "Failed to initialize GLAD" << std::endl;
         return -1;
     }
 
-    // configure global opengl state
-    // -----------------------------
-    glEnable(GL_DEPTH_TEST);
+    scenes = {
+        Scene00::getModule(),
+        Scene01::getModule(),
+        Scene02::getModule(),
+        Scene03::getModule(),
+    };
 
-    glfwGetFramebufferSize(window, &framebufferWidth, &framebufferHeight);
-
-    // build and compile our shader program
-    // ------------------------------------
-    Shader lightingShader("../shaders/shared/shader_lighting.vs", "../shaders/shared/shader_lighting.fs"); // you can name your shader files however you like
-    Shader shadowShader("../shaders/shared/shadow.vs", "../shaders/shared/shadow.fs");
-    Shader skyboxShader("../shaders/shared/shader_skybox.vs", "../shaders/shared/shader_skybox.fs");
-
-
-    // define models
-    Model brickCubeModel("../resources/0-main/brickcube/brickcube.obj");
-    brickCubeModel.setDiffuse("../resources/0-main/brickcube/brickcube_d.png");
-    brickCubeModel.setSpecular("../resources/0-main/brickcube/brickcube_s.png");
-    brickCubeModel.setNormal("../resources/0-main/brickcube/brickcube_n.png");
-
-    Model boulderModel("../resources/0-main/boulder/boulder.obj");
-    boulderModel.setDiffuse("../resources/0-main/boulder/boulder_d.png");
-    boulderModel.setNormal("../resources/0-main/boulder/boulder_n.png");
-
-    Model grassGroundModel = Model("../resources/0-main/plane.obj", true);
-    grassGroundModel.setDiffuse("../resources/0-main/grass_ground.jpg");
-
-    Model barrelModel = Model("../resources/0-main/barrel/barrel.obj");
-    barrelModel.setDiffuse("../resources/0-main/barrel/barrel_d.png");
-    barrelModel.setSpecular("../resources/0-main/barrel/barrel_s.png");
-    barrelModel.setNormal("../resources/0-main/barrel/barrel_n.png");
-
-    Model fireExtModel = Model("../resources/0-main/FireExt/FireExt.obj");
-    fireExtModel.setDiffuse("../resources/0-main/FireExt/FireExt_d.jpg");
-    fireExtModel.setSpecular("../resources/0-main/FireExt/FireExt_s.jpg");
-    fireExtModel.setNormal("../resources/0-main/FireExt/FireExt_n.jpg");
-
-    Model catModel = Model("../resources/0-main/cat/12221_Cat_v1_l3.obj");
-    catModel.setDiffuse("../resources/0-main/cat/Cat_diffuse.jpg");
-
-    Model roomModel = Model("../resources/0-main/room/small_house_obj.obj");
-    Model houseModel = Model("../resources/0-main/room/Warehouse.obj");
-    Model sofaModel = Model("../resources/0-main/sofa/sofa.obj");
-    Model tableModel = Model("../resources/0-main/table/Center Table.obj");
-
-
-
-    // Add entities to scene.
-    // you can change the position/orientation.
-    Scene scene;
-    
-
-    for (float x = -150.0f + planeSize * 0.5f; x < 150.0f; x += planeSize) {
-        for (float z = -150.0f + planeSize * 0.5f; z < 150.0f; z += planeSize) {
-            glm::mat4 planeWorldTransform = glm::mat4(1.0f);
-            planeWorldTransform = glm::translate(glm::vec3(x, 0.0f, z)) * glm::scale(glm::mat4(1.0f), glm::vec3(planeSize));
-            scene.addEntity(new Entity(&grassGroundModel, planeWorldTransform));
+    for (SceneModule& scene : scenes) {
+        if (scene.init) {
+            scene.init(window);
         }
     }
 
-    const glm::vec3 sceneOffset = glm::vec3(-2.0f, 0.0f, 4.0f);
-    const glm::vec3 housePosition = glm::vec3(2.0f, 0.0f, -4.0f) + sceneOffset;
-    const float furnitureTurnY = 180.0f;
-    auto rotateInHouse = [housePosition](glm::vec3 position) {
-        glm::vec3 local = position - housePosition;
-        return housePosition + glm::vec3(-local.x, local.y, -local.z);
-    };
+    activeSceneIndex = 0;
+    if (activeScene().onEnter) {
+        activeScene().onEnter(window);
+    }
+    std::cout << "Active scene: " << activeScene().name << std::endl;
 
-    scene.addEntity(new Entity(&fireExtModel, rotateInHouse(glm::vec3(-1.5f, 0.0f, -2.5f) + sceneOffset), 0.0f, 180.0f + furnitureTurnY, 0.0f, 0.001f));
-    // scene.addEntity(new Entity(&barrelModel, rotateInHouse(glm::vec3(-2.0f, 0.54f, 5.0f) + sceneOffset), 0, 0 + furnitureTurnY, 0, 0.05f));
-    // scene.addEntity(new Entity(&catModel, rotateInHouse(glm::vec3(3.8f, 0.0f, -5.0f) + sceneOffset), -90.0f, 0.0f + furnitureTurnY, 0.0f, 0.02f));
-    // scene.addEntity(new Entity(&roomModel, rotateInHouse(glm::vec3(-4.0f, 0.0f, 4.0f) + sceneOffset), 0.0f, 90.0f + furnitureTurnY, 0.0f, 0.02f));
-    scene.addEntity(new Entity(&houseModel, housePosition, 0.0f, 90.0f, 0.0f, 1.0f));
-    scene.addEntity(new Entity(&sofaModel, rotateInHouse(glm::vec3(-0.5f, 0.1f, -3.5f) + sceneOffset), 0.0f, 0.0f + furnitureTurnY, 0.0f, 0.5f));
-    scene.addEntity(new Entity(&tableModel, rotateInHouse(glm::vec3(4.5f, 0.0f, -3.0f) + sceneOffset), 0.0f, 0.0f + furnitureTurnY, 0.0f, 1.2f));
-
-    // define depth texture
-    DepthMapTexture depth = DepthMapTexture(SHADOW_WIDTH, SHADOW_HEIGHT);
-
-
-    // skybox
-    std::vector<std::string> faces
-    {
-        "../resources/0-main/skybox/right.jpg",
-        "../resources/0-main/skybox/left.jpg",
-        "../resources/0-main/skybox/top.jpg",
-        "../resources/0-main/skybox/bottom.jpg",
-        "../resources/0-main/skybox/front.jpg",
-        "../resources/0-main/skybox/back.jpg"
-    };
-    CubemapTexture skyboxTexture = CubemapTexture(faces);
-    unsigned int VAOskybox, VBOskybox;
-    getPositionVAO(skybox_positions, sizeof(skybox_positions), VAOskybox, VBOskybox);
-
-    lightingShader.use();
-    lightingShader.setInt("material.diffuseSampler", 0);
-    lightingShader.setInt("material.specularSampler", 1);
-    lightingShader.setInt("material.normalSampler", 2);
-    lightingShader.setInt("depthMapSampler", 3);
-    lightingShader.setFloat("material.shininess", 64.f);    // set shininess to constant value.
-
-    skyboxShader.use();
-    skyboxShader.setInt("skyboxTexture1", 0);
-
-    DirectionalLight sun(-90.0f, 45.0f, glm::vec3(1.0f));
-
-    float oldTime = static_cast<float>(glfwGetTime());
-    float introStartTime = oldTime;
-    while (!glfwWindowShouldClose(window))// render loop
-    {
-        float currentTime = static_cast<float>(glfwGetTime());
-        float dt = currentTime - oldTime;
-        deltaTime = dt;
-        oldTime = currentTime;
-
-        if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
-            glfwSetWindowShouldClose(window, true);
+    while (!glfwWindowShouldClose(window)) {
+        processSceneToggle(window);
+        if (activeScene().renderFrame) {
+            activeScene().renderFrame(window);
         }
-        float introElapsedTime = currentTime - introStartTime;
-        if (!introCameraAnimationFinished) {
-            applyIntroCameraAnimation(introElapsedTime);
-        }
-        if (introCameraAnimationFinished) {
-            processInput(window, &sun);
-        }
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-        
-        // TODO : 
-        // (1) render shadow map!
-            // framebuffer: shadow frame buffer(depth.depthMapFBO)
-            // shader : shadow.fs/vs
-
-        // I referenced this part from learnopengl shadow code
-        
-
-        glm::mat4 lightProjection = sun.getProjectionMatrix();
-        glm::mat4 lightView = sun.getViewMatrix(camera.Position);
-        glm::mat4 lightSpaceMatrix = lightProjection * lightView;
-
-        glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
-        glBindFramebuffer(GL_FRAMEBUFFER, depth.depthMapFBO);
-        glClear(GL_DEPTH_BUFFER_BIT);
-
-        shadowShader.use();
-        shadowShader.setMat4("lightSpaceMatrix", lightSpaceMatrix);
-
-        // Iterate using map<Model*, vector<Entity*>>::iterator it = scene.entities.begin()
-        for(map<Model*, vector<Entity*>>::iterator it = scene.entities.begin(); it != scene.entities.end(); it++) {
-            Model* model = it->first;
-            if (!model) continue;
-            if (model->ignoreShadow) continue;
-
-            // bind meshes
-            for (const auto& subMesh : model->subMeshes) {
-                glBindVertexArray(subMesh.mesh.VAO);
-                for(Entity* entity : it->second) {
-                    glm::mat4 modelMatrix = entity->getModelMatrix();
-                    shadowShader.setMat4("model", modelMatrix);
-                    glDrawElements(GL_TRIANGLES, subMesh.mesh.indices.size(), GL_UNSIGNED_INT, 0);
-                }
-            }
-        }
-
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
-        glfwGetFramebufferSize(window, &framebufferWidth, &framebufferHeight);
-        int currentWidth = framebufferWidth;
-        int currentHeight = framebufferHeight;
-        glViewport(0, 0, currentWidth, currentHeight);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-
-        // (2) render objects in the scene!
-            // framebuffer : default frame buffer(0)
-            // shader : shader_lighting.fs/vs
-
-        // I referenced this part from learnopengl lighting and shadow code
-        // set use lighting, use shadow, usePCF to shader
-        lightingShader.use();
-        if (useLighting) lightingShader.setFloat("useLighting", 1.0f);
-        else lightingShader.setFloat("useLighting", 0.0f);
-        if (useShadow) lightingShader.setFloat("useShadow", 1.0f);
-        else lightingShader.setFloat("useShadow", 0.0f);
-        if (usePCF) lightingShader.setFloat("usePCF", 1.0f);
-        else lightingShader.setFloat("usePCF", 0.0f);
-
-        glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)currentWidth / (float)currentHeight, 0.1f, 100.0f);
-        glm::mat4 view = camera.GetViewMatrix();
-
-        // set projection, view, camera position to lighting shader
-        lightingShader.use();
-        lightingShader.setMat4("projection", projection);
-        lightingShader.setMat4("view", view);
-        lightingShader.setVec3("light.dir", sun.lightDir);
-        lightingShader.setVec3("light.color", sun.lightColor);
-        lightingShader.setVec3("viewPos", camera.Position);
-        lightingShader.setMat4("lightSpaceMatrix", lightSpaceMatrix);
-
-        // bind depth map to texture unit 3
-        glActiveTexture(GL_TEXTURE3);
-        glBindTexture(GL_TEXTURE_2D, depth.ID);
-
-        // Iterate using map<Model*, vector<Entity*>>::iterator it = scene.entities.begin()
-        for(map<Model*, vector<Entity*>>::iterator it = scene.entities.begin(); it != scene.entities.end(); it++) {
-            Model* model = it->first;
-            if (!model) continue;
-
-            for (const auto& subMesh : model->subMeshes) {
-                lightingShader.setVec3("baseColor", subMesh.baseColor);
-                glActiveTexture(GL_TEXTURE0);
-                if (subMesh.diffuse) {
-                    glBindTexture(GL_TEXTURE_2D, subMesh.diffuse->ID);
-                    lightingShader.setFloat("useDiffuseMap", 1.0f);
-                } else {
-                    glBindTexture(GL_TEXTURE_2D, Texture::GetDummyTexture());
-                    lightingShader.setFloat("useDiffuseMap", 0.0f);
-                }
-
-                glActiveTexture(GL_TEXTURE1);
-                if (subMesh.specular) {
-                    glBindTexture(GL_TEXTURE_2D, subMesh.specular->ID);
-                    lightingShader.setFloat("useSpecularMap", 1.0f);
-                } else {
-                    glBindTexture(GL_TEXTURE_2D, Texture::GetDummyTexture());
-                    lightingShader.setFloat("useSpecularMap", 0.0f);
-                }
-
-                glActiveTexture(GL_TEXTURE2);
-                if (subMesh.normal && useNormalMap) {
-                    glBindTexture(GL_TEXTURE_2D, subMesh.normal->ID);
-                    lightingShader.setFloat("useNormalMap", 1.0f);
-                } else {
-                    glBindTexture(GL_TEXTURE_2D, Texture::GetDummyTexture());
-                    lightingShader.setFloat("useNormalMap", 0.0f);
-                }
-
-                glBindVertexArray(subMesh.mesh.VAO);
-                for(Entity* entity : it->second) {
-                    glm::mat4 modelMatrix = entity->getModelMatrix();
-                    lightingShader.setMat4("world", modelMatrix);
-                    glDrawElements(GL_TRIANGLES, subMesh.mesh.indices.size(), GL_UNSIGNED_INT, 0);
-                }
-            }
-        }
-
-        // use skybox Shader
-        skyboxShader.use();
-        glDepthFunc(GL_LEQUAL);
-        view = glm::mat4(glm::mat3(camera.GetViewMatrix()));
-        skyboxShader.setMat4("view", view);
-        skyboxShader.setMat4("projection", projection);
-
-        // render a skybox
-        glBindVertexArray(VAOskybox);
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_CUBE_MAP, skyboxTexture.textureID);
-        glDrawArrays(GL_TRIANGLES, 0, 36);
-        glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
-
-        glBindVertexArray(0);
-        glDepthFunc(GL_LESS);
-
-        // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
-        // -------------------------------------------------------------------------------
         glfwSwapBuffers(window);
         glfwPollEvents();
-    }
+    }₩
 
-    // optional: de-allocate all resources once they've outlived their purpose:
-    // ------------------------------------------------------------------------
-
-    // glfw: terminate, clearing all previously allocated GLFW resources.
-    // ------------------------------------------------------------------
     glfwTerminate();
     return 0;
-}
-
-void setCameraPose(const glm::vec3& position, float yaw, float pitch)
-{
-    camera.Position = position;
-    camera.Yaw = yaw;
-    camera.Pitch = pitch;
-    camera.ProcessMouseMovement(0.0f, 0.0f);
-}
-
-void applyIntroCameraAnimation(float elapsedTime)
-{
-    if (elapsedTime < INTRO_HOLD_START_END) {
-        setCameraPose(INTRO_CAMERA_START_POS, INTRO_CAMERA_START_YAW, INTRO_CAMERA_PITCH);
-        introCameraAnimationFinished = false;
-        return;
-    }
-
-    if (elapsedTime < INTRO_ROTATE_END) {
-        float t = (elapsedTime - INTRO_HOLD_START_END) / (INTRO_ROTATE_END - INTRO_HOLD_START_END);
-        float yaw = glm::mix(INTRO_CAMERA_START_YAW, INTRO_CAMERA_TARGET_YAW, glm::clamp(t, 0.0f, 1.0f));
-        setCameraPose(INTRO_CAMERA_START_POS, yaw, INTRO_CAMERA_PITCH);
-        introCameraAnimationFinished = false;
-        return;
-    }
-
-    if (elapsedTime < INTRO_MOVE_END) {
-        float t = (elapsedTime - INTRO_ROTATE_END) / (INTRO_MOVE_END - INTRO_ROTATE_END);
-        glm::vec3 position = glm::mix(INTRO_CAMERA_START_POS, INTRO_CAMERA_TARGET_POS, glm::clamp(t, 0.0f, 1.0f));
-        setCameraPose(position, INTRO_CAMERA_TARGET_YAW, INTRO_CAMERA_PITCH);
-        introCameraAnimationFinished = false;
-        return;
-    }
-
-    setCameraPose(INTRO_CAMERA_TARGET_POS, INTRO_CAMERA_TARGET_YAW, INTRO_CAMERA_PITCH);
-    introCameraAnimationFinished = elapsedTime >= INTRO_HOLD_FINAL_END;
-}
-
-// process all input: query GLFW whether relevant keys are pressed/released this frame and react accordingly
-// ---------------------------------------------------------------------------------------------------------
-void processInput(GLFWwindow* window, DirectionalLight* sun)
-{
-    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
-        glfwSetWindowShouldClose(window, true);
-
-    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-        camera.ProcessKeyboard(FORWARD, deltaTime);
-    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-        camera.ProcessKeyboard(BACKWARD, deltaTime);
-    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-        camera.ProcessKeyboard(LEFT, deltaTime);
-    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-        camera.ProcessKeyboard(RIGHT, deltaTime);
-
-
-    float t = 20.0f * deltaTime;
-    
-    // TODO : 
-    // Arrow key : increase, decrease sun's azimuth, elevation with amount of t.
-    // key 1 : toggle using normal map
-    // key 2 : toggle using shadow
-    // key 3 : toggle using whole lighting
-
-    // arrowkeys
-    if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) sun->processKeyboard(0.0f, t);
-    if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) sun->processKeyboard(0.0f, -t);
-    if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS) sun->processKeyboard(-t, 0.0f);
-    if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) sun->processKeyboard(t, 0.0f);
-
-    // key 1
-    if (glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS && isKeyboardDone[GLFW_KEY_1] == false) {
-        isKeyboardDone[GLFW_KEY_1] = true;
-        useNormalMap = !useNormalMap;
-    }
-    if (glfwGetKey(window, GLFW_KEY_1) == GLFW_RELEASE) {
-        isKeyboardDone[GLFW_KEY_1] = false;
-    }
-
-    // key 2
-    if (glfwGetKey(window, GLFW_KEY_2) == GLFW_PRESS && isKeyboardDone[GLFW_KEY_2] == false) {
-        isKeyboardDone[GLFW_KEY_2] = true;
-        useShadow = !useShadow;
-    }
-    if (glfwGetKey(window, GLFW_KEY_2) == GLFW_RELEASE) {
-        isKeyboardDone[GLFW_KEY_2] = false;
-    }
-
-    // key 3
-    if (glfwGetKey(window, GLFW_KEY_3) == GLFW_PRESS && isKeyboardDone[GLFW_KEY_3] == false) {
-        isKeyboardDone[GLFW_KEY_3] = true;
-        useLighting = !useLighting;
-    }
-    if (glfwGetKey(window, GLFW_KEY_3) == GLFW_RELEASE) {
-        isKeyboardDone[GLFW_KEY_3] = false;
-    }
-
-    // key 4: PCF
-    if (glfwGetKey(window, GLFW_KEY_4) == GLFW_PRESS && isKeyboardDone[GLFW_KEY_4] == false) {
-        isKeyboardDone[GLFW_KEY_4] = true;
-        usePCF = !usePCF;
-    }
-    if (glfwGetKey(window, GLFW_KEY_4) == GLFW_RELEASE) {
-        isKeyboardDone[GLFW_KEY_4] = false;
-    }
-
-}
-
-// glfw: whenever the window size changed (by OS or user resize) this callback function executes
-// ---------------------------------------------------------------------------------------------
-void framebuffer_size_callback(GLFWwindow* window, int width, int height)
-{
-    // make sure the viewport matches the new window dimensions; note that width and
-    // height will be significantly larger than specified on retina displays.
-    glViewport(0, 0, width, height);
-}
-
-
-// glfw: whenever the mouse moves, this callback is called
-// -------------------------------------------------------
-void mouse_callback(GLFWwindow* window, double xpos, double ypos)
-{
-    if (firstMouse)
-    {
-        lastX = xpos;
-        lastY = ypos;
-        firstMouse = false;
-    }
-
-    float xoffset = xpos - lastX;
-    float yoffset = lastY - ypos; // reversed since y-coordinates go from bottom to top
-
-    lastX = xpos;
-    lastY = ypos;
-
-    camera.ProcessMouseMovement(xoffset, yoffset);
-}
-
-// glfw: whenever the mouse scroll wheel scrolls, this callback is called
-// ----------------------------------------------------------------------
-void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
-{
-    camera.ProcessMouseScroll(yoffset);
 }

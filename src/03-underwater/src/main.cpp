@@ -11,6 +11,7 @@
 #include <algorithm>
 #include <iostream>
 #include <vector>
+#include <functional>
 #include "../../00-main/src/shared/camera.h"
 #include "../../00-main/src/shared/texture.h"
 #include "../../00-main/src/shared/model.h"
@@ -25,14 +26,24 @@
 #include "animation/boid.h"
 #include <cstdlib>
 #include <ctime>
+#include "../../00-main/src/shared/scene_module.h"
+
+namespace Scene03 {
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 void processInput(GLFWwindow* window, DirectionalLight* sun);
+void getCameraPose(SceneCameraPose* pose);
+void getDefaultCameraPose(SceneCameraPose* pose);
+void setCameraPose(const SceneCameraPose& pose);
 
 bool isWindowed = true;
 bool isKeyboardDone[1024] = { 0 };
+
+static bool initialized = false;
+static std::function<void(GLFWwindow*)> renderFrameImpl;
+static std::function<void(GLFWwindow*)> onEnterImpl;
 
 // setting
 const unsigned int SCR_WIDTH = 1920;
@@ -45,7 +56,10 @@ int framebufferWidth = SCR_WIDTH;
 int framebufferHeight = SCR_HEIGHT;
 
 // camera
-Camera camera(glm::vec3(0.0f, 1.5f, 0.5f));
+const glm::vec3 CAMERA_INITIAL_POS = glm::vec3(0.0f, 1.5f, 0.5f);
+const float CAMERA_INITIAL_YAW = -90.0f;
+const float CAMERA_INITIAL_PITCH = 0.0f;
+Camera camera(CAMERA_INITIAL_POS, glm::vec3(0.0f, 1.0f, 0.0f), CAMERA_INITIAL_YAW, CAMERA_INITIAL_PITCH);
 float lastX = SCR_WIDTH / 2.0f;
 float lastY = SCR_HEIGHT / 2.0f;
 bool firstMouse = true;
@@ -61,56 +75,18 @@ bool useLighting = true;
 bool useShadow = true;
 bool usePCF = true;
 
-int main()
+void init(GLFWwindow* window)
 {
+    if (initialized) return;
+    initialized = true;
     std::srand(static_cast<unsigned int>(std::time(nullptr)));
-
-    // glfw: initialize and configure
-    // ------------------------------
-    glfwInit();
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-
-#ifdef __APPLE__
-    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); // uncomment this statement to fix compilation on OS X
-#endif
-
-    // glfw window creation
-    // --------------------
-    GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "LearnOpenGL", NULL, NULL);
-    if (window == NULL)
-    {
-        std::cout << "Failed to create GLFW window" << std::endl;
-        glfwTerminate();
-        return -1;
-    }
-    glfwMakeContextCurrent(window);
-    glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
-    glfwSetCursorPosCallback(window, mouse_callback);
-    glfwSetScrollCallback(window, scroll_callback);
-
-    // tell GLFW to capture our mouse
-    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-
-    // glad: load all OpenGL function pointers
-    // ---------------------------------------
-    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
-    {
-        std::cout << "Failed to initialize GLAD" << std::endl;
-        return -1;
-    }
-
     glfwGetFramebufferSize(window, &framebufferWidth, &framebufferHeight);
-
-    // configure global opengl state
-    // -----------------------------
     glEnable(GL_DEPTH_TEST);
 
     // build and compile our shader program
     // ------------------------------------
-    Shader lightingShader("../../00-main/shaders/3-underwater/shader_lighting.vs", "../../00-main/shaders/3-underwater/shader_lighting.fs"); // you can name your shader files however you like
-    Shader shadowShader("../../00-main/shaders/shared/shadow.vs", "../../00-main/shaders/shared/shadow.fs");
+    static Shader lightingShader("../../00-main/shaders/3-underwater/shader_lighting.vs", "../../00-main/shaders/3-underwater/shader_lighting.fs"); // you can name your shader files however you like
+    static Shader shadowShader("../../00-main/shaders/shared/shadow.vs", "../../00-main/shaders/shared/shadow.fs");
 
 
     // define models
@@ -118,37 +94,37 @@ int main()
     // (1) diffuse, specular, normal : brickCubeModel
     // (2) diffuse, normal only : boulderModel
     // (3) diffuse only : grassGroundModel
-    AnimationModel bassModel = AnimationModel("../../00-main/resources/3-underwater/fish/bass/bass.dae", true, false);
-    Animation bassAnimation("../../00-main/resources/3-underwater/fish/bass/bass.dae", &bassModel);
-	Animator bassAnimator(&bassAnimation);
+    static AnimationModel bassModel = AnimationModel("../../00-main/resources/3-underwater/fish/bass/bass.dae", true, false);
+    static Animation bassAnimation("../../00-main/resources/3-underwater/fish/bass/bass.dae", &bassModel);
+	static Animator bassAnimator(&bassAnimation);
     bassModel.animator = &bassAnimator;
     bassModel.radius *= 0.7;
     bassModel.length *= 0.7;
     bassAnimation.SetDuration(1670.0);
 
-    AnimationModel sharkModel = AnimationModel("../../00-main/resources/3-underwater/fish/shark/shark.dae", true, false);
-    Animation sharkAnimation("../../00-main/resources/3-underwater/fish/shark/shark.dae", &sharkModel);
-	Animator sharkAnimator(&sharkAnimation);
+    static AnimationModel sharkModel = AnimationModel("../../00-main/resources/3-underwater/fish/shark/shark.dae", true, false);
+    static Animation sharkAnimation("../../00-main/resources/3-underwater/fish/shark/shark.dae", &sharkModel);
+	static Animator sharkAnimator(&sharkAnimation);
     sharkModel.animator = &sharkAnimator;
     sharkModel.radius *= 2;
     sharkModel.length *= 2;
 
-    Model shellModel = Model("../../00-main/resources/3-underwater/seashell/seashell1/seashell1.obj", false, true, true);
-    Model shell2Model = Model("../../00-main/resources/3-underwater/seashell/seashell2/seashell2.obj", false, true, true);
-    Model pebbleModel = Model("../../00-main/resources/3-underwater/seashell/pebble/pebble.obj", false, true, true);
-    Model boatModel = Model("../../00-main/resources/3-underwater/wooden_boat/wooden_boat.obj", false, true, true);
+    static Model shellModel = Model("../../00-main/resources/3-underwater/seashell/seashell1/seashell1.obj", false, true, true);
+    static Model shell2Model = Model("../../00-main/resources/3-underwater/seashell/seashell2/seashell2.obj", false, true, true);
+    static Model pebbleModel = Model("../../00-main/resources/3-underwater/seashell/pebble/pebble.obj", false, true, true);
+    static Model boatModel = Model("../../00-main/resources/3-underwater/wooden_boat/wooden_boat.obj", false, true, true);
 
-    Model floorModel = Model("../../00-main/resources/3-underwater/mountain/mountain.obj", true, true, true);
-    Model houseModel = Model("../../00-main/resources/0-main/room/Warehouse.obj", false, false, true);
-    Model sofaModel = Model("../../00-main/resources/0-main/sofa/sofa.obj", false, false, true);
-    Model tableModel = Model("../../00-main/resources/0-main/table/Center Table.obj", false, false, true);
+    static Model floorModel = Model("../../00-main/resources/3-underwater/mountain/mountain.obj", true, true, true);
+    static Model houseModel = Model("../../00-main/resources/0-main/room/Warehouse.obj", false, false, true);
+    static Model sofaModel = Model("../../00-main/resources/0-main/sofa/sofa.obj", false, false, true);
+    static Model tableModel = Model("../../00-main/resources/0-main/table/Center Table.obj", false, false, true);
 
     // Add entities to scene.
     // you can change the position/orientation.
-    Scene scene;
-    std::vector<Boid*> allBoids;
-    std::vector<Boid*> sharkBoids;
-    std::vector<Boid*> bassBoids;
+    static Scene scene;
+    static std::vector<Boid*> allBoids;
+    static std::vector<Boid*> sharkBoids;
+    static std::vector<Boid*> bassBoids;
 
     for (int i = 0; i < 12; i++) {
         Entity* sharkEntity = new Entity(&sharkModel, glm::scale(glm::vec3(2.0f)));
@@ -244,7 +220,7 @@ int main()
     scene.addEntity(new Entity(&floorModel, glm::translate(glm::vec3(40.0f, -3.05f, 40.0f)) * glm::scale(glm::vec3(0.018f, 0.008f, 0.018f))));
 
     // define depth texture
-    DepthMapTexture depth = DepthMapTexture(SHADOW_WIDTH, SHADOW_HEIGHT);
+    static DepthMapTexture depth = DepthMapTexture(SHADOW_WIDTH, SHADOW_HEIGHT);
 
 
     glClearColor(0.15f, 0.52f, 0.73f, 1.0f);
@@ -259,19 +235,35 @@ int main()
     lightingShader.setVec2("houseEffectMin", -6.0f, -4.0f);
     lightingShader.setVec2("houseEffectMax", 6.0f, 4.0f);
 
-    const int causticFrameCount = 32;
+    static const int causticFrameCount = 32;
     const char* causticFrameDirectory = "../../00-main/resources/3-underwater/caustics/caustic_frames";
-    CausticTexture causticTexture(causticFrameDirectory, causticFrameCount);
+    static CausticTexture causticTexture(causticFrameDirectory, causticFrameCount);
 
-    DirectionalLight sun(-90.0f, 45.0f, glm::vec3(1.0f));
+    static DirectionalLight sun(-90.0f, 45.0f, glm::vec3(1.0f));
 
-    float oldTime = static_cast<float>(glfwGetTime());
-    while (!glfwWindowShouldClose(window))// render loop
-    {
+    static float oldTime = static_cast<float>(glfwGetTime());
+    
+
+    onEnterImpl = [&](GLFWwindow* window) {
+        oldTime = static_cast<float>(glfwGetTime());
+        firstMouse = true;
+        glClearColor(0.15f, 0.52f, 0.73f, 1.0f);
+    };
+
+    renderFrameImpl = [&](GLFWwindow* window) {
+
         float currentTime = static_cast<float>(glfwGetTime());
         float dt = currentTime - oldTime;
         deltaTime = dt;
         oldTime = currentTime;
+
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glEnable(GL_DEPTH_TEST);
+        glDepthMask(GL_TRUE);
+        glDepthFunc(GL_LESS);
+        glDisable(GL_BLEND);
+
+        glClearColor(0.15f, 0.52f, 0.73f, 1.0f);
 
         // input
         processInput(window, &sun);
@@ -414,20 +406,95 @@ int main()
             }
         }
 
-        // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
         // -------------------------------------------------------------------------------
+    };
+}
+
+void onEnter(GLFWwindow* window)
+{
+    if (onEnterImpl) onEnterImpl(window);
+}
+
+void renderFrame(GLFWwindow* window)
+{
+    if (renderFrameImpl) renderFrameImpl(window);
+}
+
+SceneModule getModule()
+{
+    return { "Scene03", init, onEnter, renderFrame, framebuffer_size_callback, mouse_callback, scroll_callback, getCameraPose, getDefaultCameraPose, setCameraPose };
+}
+
+int runStandalone()
+{
+    glfwInit();
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+#ifdef __APPLE__
+    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+#endif
+
+    GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "LearnOpenGL", NULL, NULL);
+    if (window == NULL) {
+        std::cout << "Failed to create GLFW window" << std::endl;
+        glfwTerminate();
+        return -1;
+    }
+    glfwMakeContextCurrent(window);
+    glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+    glfwSetCursorPosCallback(window, mouse_callback);
+    glfwSetScrollCallback(window, scroll_callback);
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+
+    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
+        std::cout << "Failed to initialize GLAD" << std::endl;
+        return -1;
+    }
+
+    init(window);
+    onEnter(window);
+    while (!glfwWindowShouldClose(window)) {
+        renderFrame(window);
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
 
-    // optional: de-allocate all resources once they've outlived their purpose:
-    // ------------------------------------------------------------------------
-
-    // glfw: terminate, clearing all previously allocated GLFW resources.
-    // ------------------------------------------------------------------
     glfwTerminate();
     return 0;
 }
+
+
+void getCameraPose(SceneCameraPose* pose)
+{
+    if (!pose) return;
+    pose->positionX = camera.Position.x;
+    pose->positionY = camera.Position.y;
+    pose->positionZ = camera.Position.z;
+    pose->yaw = camera.Yaw;
+    pose->pitch = camera.Pitch;
+    pose->zoom = camera.Zoom;
+}
+
+void getDefaultCameraPose(SceneCameraPose* pose)
+{
+    if (!pose) return;
+    pose->positionX = CAMERA_INITIAL_POS.x;
+    pose->positionY = CAMERA_INITIAL_POS.y;
+    pose->positionZ = CAMERA_INITIAL_POS.z;
+    pose->yaw = CAMERA_INITIAL_YAW;
+    pose->pitch = CAMERA_INITIAL_PITCH;
+    pose->zoom = ZOOM;
+}
+
+void setCameraPose(const SceneCameraPose& pose)
+{
+    camera.Position = glm::vec3(pose.positionX, pose.positionY, pose.positionZ);
+    camera.Zoom = pose.zoom;
+    camera.SetAngles(pose.yaw, pose.pitch);
+    firstMouse = true;
+}
+
 
 // process all input: query GLFW whether relevant keys are pressed/released this frame and react accordingly
 // ---------------------------------------------------------------------------------------------------------
@@ -534,3 +601,12 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 {
     camera.ProcessMouseScroll(yoffset);
 }
+
+} // namespace Scene03
+
+#ifndef COMBINED_SCENE_APP
+int main()
+{
+    return Scene03::runStandalone();
+}
+#endif

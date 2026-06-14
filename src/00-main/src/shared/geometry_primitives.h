@@ -1,7 +1,7 @@
 #ifndef GEOMETRY_PRIMITIVES_H
 #define GEOMETRY_PRIMITIVES_H
 
-float skybox_positions[] = {
+static const float skybox_positions[] = {
         // positions
         -1.0f,  1.0f, -1.0f,
         -1.0f, -1.0f, -1.0f,

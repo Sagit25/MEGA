@@ -10,6 +10,7 @@
 #include "../../00-main/src/shared/opengl_utils.h"
 #include <iostream>
 #include <vector>
+#include <functional>
 #include "../../00-main/src/shared/camera.h"
 #include "../../00-main/src/shared/texture.h"
 #include "../../00-main/src/shared/texture_cube.h"
@@ -17,6 +18,9 @@
 #include "../../00-main/src/shared/mesh.h"
 #include <algorithm>
 #include <cmath>
+#include "../../00-main/src/shared/scene_module.h"
+
+namespace Scene02 {
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
@@ -26,6 +30,9 @@ void initAccumTargets(int width, int height);
 void resizeAccumTargets(int width, int height);
 void initSceneTarget(int width, int height);
 void resizeSceneTarget(int width, int height);
+void getCameraPose(SceneCameraPose* pose);
+void getDefaultCameraPose(SceneCameraPose* pose);
+void setCameraPose(const SceneCameraPose& pose);
 float getGroundTempAtTime(float renderTime);
 float getTemperatureRenderTime(float elapsedTime);
 float getHazeAmountAtTime(float renderTime, float currentGroundTemp);
@@ -34,6 +41,10 @@ glm::vec3 getDirectionalLightDir(float azimuth, float elevation);
 
 bool isWindowed = true;
 bool isKeyboardDone[1024] = { 0 };
+
+static bool initialized = false;
+static std::function<void(GLFWwindow*)> renderFrameImpl;
+static std::function<void(GLFWwindow*)> onEnterImpl;
 
 // setting
 const unsigned int SCR_WIDTH = 1920;
@@ -45,7 +56,10 @@ int framebufferWidth = SCR_WIDTH;
 int framebufferHeight = SCR_HEIGHT;
 
 // camera
-Camera camera(glm::vec3(0.0f, 0.0f, 3.0f), glm::vec3(0.0f, 1.0f, 0.0f), -90.0f);
+const glm::vec3 CAMERA_INITIAL_POS = glm::vec3(0.0f, 0.0f, 3.0f);
+const float CAMERA_INITIAL_YAW = -90.0f;
+const float CAMERA_INITIAL_PITCH = 0.0f;
+Camera camera(CAMERA_INITIAL_POS, glm::vec3(0.0f, 1.0f, 0.0f), CAMERA_INITIAL_YAW, CAMERA_INITIAL_PITCH);
 float lastX = SCR_WIDTH / 2.0f;
 float lastY = SCR_HEIGHT / 2.0f;
 bool firstMouse = true;
@@ -162,48 +176,12 @@ void drawShadowModelEntities(Shader& shader, const std::vector<Entity*>& entitie
     }
 }
 
-int main()
+void init(GLFWwindow* window)
 {
+    if (initialized) return;
+    initialized = true;
     std::cout << "Current main.cpp: hw5_real_final" << std::endl;
     camera.MovementSpeed = 0.2f;
-
-    // glfw: initialize and configure
-    // ------------------------------
-    glfwInit();
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-
-#ifdef __APPLE__
-    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); // uncomment this statement to fix compilation on OS X
-#endif
-
-    // glfw window creation
-    // --------------------
-    GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "LearnOpenGL", NULL, NULL);
-    if (window == NULL)
-    {
-        std::cout << "Failed to create GLFW window" << std::endl;
-        glfwTerminate();
-        return -1;
-    }
-    glfwMakeContextCurrent(window);
-    glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
-
-    glfwSetCursorPosCallback(window, mouse_callback);
-    glfwSetScrollCallback(window, scroll_callback);
-
-    // tell GLFW to capture our mouse
-    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-
-    // glad: load all OpenGL function pointers
-    // ---------------------------------------
-    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
-    {
-        std::cout << "Failed to initialize GLAD" << std::endl;
-        return -1;
-    }
-
     glfwGetFramebufferSize(window, &framebufferWidth, &framebufferHeight);
 
     // configure global opengl state
@@ -212,10 +190,10 @@ int main()
 
     // build and compile our shader program
     // ------------------------------------
-    Shader rayTracingShader("../../00-main/shaders/2-desert/shader_ray_tracing.vs", "../../00-main/shaders/2-desert/shader_ray_tracing.fs");
-    Shader heatHazeShader("../../00-main/shaders/2-desert/shader_ray_tracing.vs", "../../00-main/shaders/2-desert/shader_heat_haze.fs");
-    Shader lightingShader("../../00-main/shaders/shared/shader_lighting.vs", "../../00-main/shaders/shared/shader_lighting.fs");
-    Shader shadowShader("../../00-main/shaders/shared/shadow.vs", "../../00-main/shaders/shared/shadow.fs");
+    static Shader rayTracingShader("../../00-main/shaders/2-desert/shader_ray_tracing.vs", "../../00-main/shaders/2-desert/shader_ray_tracing.fs");
+    static Shader heatHazeShader("../../00-main/shaders/2-desert/shader_ray_tracing.vs", "../../00-main/shaders/2-desert/shader_heat_haze.fs");
+    static Shader lightingShader("../../00-main/shaders/shared/shader_lighting.vs", "../../00-main/shaders/shared/shader_lighting.fs");
+    static Shader shadowShader("../../00-main/shaders/shared/shadow.vs", "../../00-main/shaders/shared/shadow.fs");
 
     std::vector<float> quad_data({
         // positions         // uvs
@@ -227,7 +205,7 @@ int main()
     std::vector<unsigned int> quad_indices_vec({ 0,1,3,1,2,3 });
     std::vector<unsigned int> attrib_sizes({ 3, 2 });
 
-    VAO* quad = getVAOFromAttribData(quad_data, attrib_sizes, quad_indices_vec);
+    static VAO* quad = getVAOFromAttribData(quad_data, attrib_sizes, quad_indices_vec);
     initSceneTarget(framebufferWidth, framebufferHeight);
 
     // Original skybox data (works well)
@@ -249,29 +227,29 @@ int main()
         "../../00-main/resources/2-desert/desert_day/sky_posz.jpg",
         "../../00-main/resources/2-desert/desert_day/sky_negz.jpg"
     };
-    CubemapTexture skyboxTexture = CubemapTexture(faces);
+    static CubemapTexture skyboxTexture = CubemapTexture(faces);
 
     
 
 
     // [Project] Texture added
-    Texture objectTex("../../00-main/resources/2-desert/pyramid/sandstone_diff.jpg");
-    Texture groundTex("../../00-main/resources/2-desert/pyramid/desert_sand_floor.jpg");
+    static Texture objectTex("../../00-main/resources/2-desert/pyramid/sandstone_diff.jpg");
+    static Texture groundTex("../../00-main/resources/2-desert/pyramid/desert_sand_floor.jpg");
 
-    Model houseModel("../../00-main/resources/0-main/room/Warehouse.obj");
-    Model sofaModel("../../00-main/resources/0-main/sofa/sofa.obj");
-    Model tableModel("../../00-main/resources/0-main/table/Center Table.obj");
+    static Model houseModel("../../00-main/resources/0-main/room/Warehouse.obj");
+    static Model sofaModel("../../00-main/resources/0-main/sofa/sofa.obj");
+    static Model tableModel("../../00-main/resources/0-main/table/Center Table.obj");
 
-    std::vector<Entity*> houseEntities;
+    static std::vector<Entity*> houseEntities;
     const glm::vec3 mainCameraStart = glm::vec3(0.0f, 1.5f, 0.5f);
     const glm::vec3 mainSceneOffset = glm::vec3(-2.0f, 0.0f, 4.0f);
     const glm::vec3 mainHousePosition = glm::vec3(2.0f, 0.0f, -4.0f) + mainSceneOffset;
-    const glm::vec3 housePosition = camera.Position + (mainHousePosition - mainCameraStart);
+    static const glm::vec3 housePosition = camera.Position + (mainHousePosition - mainCameraStart);
     const float furnitureTurnY = 180.0f;
-    auto mapMainPosition = [housePosition, mainHousePosition](glm::vec3 mainPosition) {
+    auto mapMainPosition = [mainHousePosition](glm::vec3 mainPosition) {
         return housePosition + (mainPosition - mainHousePosition);
     };
-    auto rotateInHouse = [housePosition](glm::vec3 position) {
+    auto rotateInHouse = [](glm::vec3 position) {
         glm::vec3 local = position - housePosition;
         return housePosition + glm::vec3(-local.x, local.y, -local.z);
     };
@@ -280,7 +258,7 @@ int main()
     houseEntities.push_back(new Entity(&sofaModel, rotateInHouse(mapMainPosition(glm::vec3(-0.5f, 0.1f, -3.5f) + mainSceneOffset)), 0.0f, furnitureTurnY, 0.0f, 0.5f));
     houseEntities.push_back(new Entity(&tableModel, rotateInHouse(mapMainPosition(glm::vec3(4.5f, 0.0f, -3.0f) + mainSceneOffset)), 0.0f, furnitureTurnY, 0.0f, 1.2f));
 
-    DepthMapTexture depth = DepthMapTexture(SHADOW_WIDTH, SHADOW_HEIGHT);
+    static DepthMapTexture depth = DepthMapTexture(SHADOW_WIDTH, SHADOW_HEIGHT);
 
     unsigned int vs_ubo = glGetUniformBlockIndex(rayTracingShader.ID, "mesh_vertices_ubo");
     glUniformBlockBinding(rayTracingShader.ID, vs_ubo, 0);
@@ -315,26 +293,44 @@ int main()
     lightingShader.setInt("material.normalSampler", 2);
     lightingShader.setInt("depthMapSampler", 3);
     lightingShader.setFloat("material.shininess", 32.0f);
-    glm::vec3 houseLightDir = getDirectionalLightDir(-90.0f, 45.0f);
+    static glm::vec3 houseLightDir = getDirectionalLightDir(-90.0f, 45.0f);
     lightingShader.setVec3("light.dir", houseLightDir);
     lightingShader.setVec3("light.color", glm::vec3(1.0f));
     lightingShader.setFloat("useShadow", 1.0f);
     lightingShader.setFloat("useLighting", 1.0f);
     lightingShader.setFloat("usePCF", 1.0f);
 
-    glm::mat4 viewMatBefore = camera.GetViewMatrix();
-    float zoomBefore = camera.Zoom;
+    static glm::mat4 viewMatBefore = camera.GetViewMatrix();
+    static float zoomBefore = camera.Zoom;
 
     // Added: For quick camera movement
-    lastFrame = glfwGetTime();
+    lastFrame = 0.0f;
 
-    while (!glfwWindowShouldClose(window))// render loop
-    {
+    
+    static float sceneStartTime = static_cast<float>(glfwGetTime());
+
+    onEnterImpl = [&](GLFWwindow* window) {
+        sceneStartTime = static_cast<float>(glfwGetTime());
+        lastFrame = 0.0f;
+        firstMouse = true;
+        glfwGetFramebufferSize(window, &framebufferWidth, &framebufferHeight);
+        resizeSceneTarget(framebufferWidth, framebufferHeight);
+    };
+
+    renderFrameImpl = [&](GLFWwindow* window) {
+
         // For quick camera movement
-        float elapsedTime = static_cast<float>(glfwGetTime());
+        float absoluteTime = static_cast<float>(glfwGetTime());
+        float elapsedTime = absoluteTime - sceneStartTime;
         float temperatureTime = getTemperatureRenderTime(elapsedTime);
         deltaTime = elapsedTime - lastFrame;
         lastFrame = elapsedTime;
+
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glEnable(GL_DEPTH_TEST);
+        glDepthMask(GL_TRUE);
+        glDepthFunc(GL_LESS);
+        glDisable(GL_BLEND);
 
         // [Project] Animate temperature change
         groundTemp = getGroundTempAtTime(temperatureTime);
@@ -423,26 +419,95 @@ int main()
 
         processInput(window);
 
-        // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
         // -------------------------------------------------------------------------------
+    };
+}
+
+void onEnter(GLFWwindow* window)
+{
+    if (onEnterImpl) onEnterImpl(window);
+}
+
+void renderFrame(GLFWwindow* window)
+{
+    if (renderFrameImpl) renderFrameImpl(window);
+}
+
+SceneModule getModule()
+{
+    return { "Scene02", init, onEnter, renderFrame, framebuffer_size_callback, mouse_callback, scroll_callback, getCameraPose, getDefaultCameraPose, setCameraPose };
+}
+
+int runStandalone()
+{
+    glfwInit();
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+#ifdef __APPLE__
+    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+#endif
+
+    GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "LearnOpenGL", NULL, NULL);
+    if (window == NULL) {
+        std::cout << "Failed to create GLFW window" << std::endl;
+        glfwTerminate();
+        return -1;
+    }
+    glfwMakeContextCurrent(window);
+    glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+    glfwSetCursorPosCallback(window, mouse_callback);
+    glfwSetScrollCallback(window, scroll_callback);
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+
+    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
+        std::cout << "Failed to initialize GLAD" << std::endl;
+        return -1;
+    }
+
+    init(window);
+    onEnter(window);
+    while (!glfwWindowShouldClose(window)) {
+        renderFrame(window);
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
 
-    // optional: de-allocate all resources once they've outlived their purpose:
-    // ------------------------------------------------------------------------
-    if (sceneColorTexture) glDeleteTextures(1, &sceneColorTexture);
-    if (sceneFBO) glDeleteFramebuffers(1, &sceneFBO);
-    //glDeleteVertexArrays(1,&VAOcube);
-    //glDeleteBuffers(1, VBOcube);
-    //glDeleteVertexArrays(1, &VAOquad);
-    //glDeleteBuffers(1, &VBOquad);
-
-    // glfw: terminate, clearing all previously allocated GLFW resources.
-    // ------------------------------------------------------------------
     glfwTerminate();
     return 0;
 }
+
+
+void getCameraPose(SceneCameraPose* pose)
+{
+    if (!pose) return;
+    pose->positionX = camera.Position.x;
+    pose->positionY = camera.Position.y;
+    pose->positionZ = camera.Position.z;
+    pose->yaw = camera.Yaw;
+    pose->pitch = camera.Pitch;
+    pose->zoom = camera.Zoom;
+}
+
+void getDefaultCameraPose(SceneCameraPose* pose)
+{
+    if (!pose) return;
+    pose->positionX = CAMERA_INITIAL_POS.x;
+    pose->positionY = CAMERA_INITIAL_POS.y;
+    pose->positionZ = CAMERA_INITIAL_POS.z;
+    pose->yaw = CAMERA_INITIAL_YAW;
+    pose->pitch = CAMERA_INITIAL_PITCH;
+    pose->zoom = ZOOM;
+}
+
+void setCameraPose(const SceneCameraPose& pose)
+{
+    camera.Position = glm::vec3(pose.positionX, pose.positionY, pose.positionZ);
+    camera.Zoom = pose.zoom;
+    camera.SetAngles(pose.yaw, pose.pitch);
+    firstMouse = true;
+}
+
 
 void setToggle(GLFWwindow* window, unsigned int key, bool *value) {
     if (glfwGetKey(window, key) == GLFW_PRESS && !isKeyboardDone[key]) {
@@ -600,3 +665,12 @@ void resizeSceneTarget(int width, int height) {
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
     glBindTexture(GL_TEXTURE_2D, 0);
 }
+
+} // namespace Scene02
+
+#ifndef COMBINED_SCENE_APP
+int main()
+{
+    return Scene02::runStandalone();
+}
+#endif
