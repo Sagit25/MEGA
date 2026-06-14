@@ -6,13 +6,13 @@
 #include <glm/glm.hpp>
 #include <glm/gtx/transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
-#include "shader.h"
+#include "../../00-main/src/shared/shader.h"
 #include "opengl_utils.h"
 #include <iostream>
 #include <vector>
 #include "camera.h"
 #include "texture.h"
-#include "texture_cube.h"
+#include "../../00-main/src/shared/texture_cube.h"
 #include "model.h"
 #include "mesh.h"
 #include <algorithm>

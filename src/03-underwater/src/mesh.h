@@ -6,7 +6,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-#include "shader.h"
+#include "../../00-main/src/shared/shader.h"
 #include <string>
 #include <fstream>
 #include <sstream>

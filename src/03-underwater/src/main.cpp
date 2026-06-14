@@ -6,7 +6,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtx/transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
-#include "shader.h"
+#include "../../00-main/src/shared/shader.h"
 #include "opengl_utils.h"
 #include <algorithm>
 #include <iostream>
@@ -15,9 +15,9 @@
 #include "texture.h"
 #include "model.h"
 #include "mesh.h"
-#include "scene.h"
-#include "math_utils.h"
-#include "light.h"
+#include "../../00-main/src/shared/scene.h"
+#include "../../00-main/src/shared/math_utils.h"
+#include "../../00-main/src/shared/light.h"
 #include "animation/model_animation.h"
 #include "animation/animation.h"
 #include "animation/animator.h"

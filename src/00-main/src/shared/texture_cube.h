@@ -1,6 +1,6 @@
 #ifndef TEXTURE_CUBE_H
 #define TEXTURE_CUBE_H
-#include "texture.h"
+#include "stb_image.h"
 
 #include <string>
 #include <fstream>

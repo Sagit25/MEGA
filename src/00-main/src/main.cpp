@@ -6,19 +6,19 @@
 #include <glm/glm.hpp>
 #include <glm/gtx/transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
-#include "shader.h"
+#include "shared/shader.h"
 #include "opengl_utils.h"
-#include "geometry_primitives.h"
+#include "shared/geometry_primitives.h"
 #include <iostream>
 #include <vector>
 #include "camera.h"
 #include "texture.h"
-#include "texture_cube.h"
+#include "shared/texture_cube.h"
 #include "model.h"
 #include "mesh.h"
-#include "scene.h"
-#include "math_utils.h"
-#include "light.h"
+#include "shared/scene.h"
+#include "shared/math_utils.h"
+#include "shared/light.h"
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);

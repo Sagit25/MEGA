@@ -8,7 +8,7 @@
 #include <vector>
 #include <cstdlib>
 
-#include "shader.h"
+#include "../../00-main/src/shared/shader.h"
 #include "camera.h"
 #include "model.h"
 
