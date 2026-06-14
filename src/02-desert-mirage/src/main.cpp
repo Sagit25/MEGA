@@ -211,8 +211,8 @@ int main()
 
     // build and compile our shader program
     // ------------------------------------
-    Shader rayTracingShader("../shaders/shader_ray_tracing.vs", "../shaders/shader_ray_tracing.fs");
-    Shader heatHazeShader("../shaders/shader_ray_tracing.vs", "../shaders/shader_heat_haze.fs");
+    Shader rayTracingShader("../../00-main/shaders/2-desert/shader_ray_tracing.vs", "../../00-main/shaders/2-desert/shader_ray_tracing.fs");
+    Shader heatHazeShader("../../00-main/shaders/2-desert/shader_ray_tracing.vs", "../../00-main/shaders/2-desert/shader_heat_haze.fs");
     Shader lightingShader("../../00-main/shaders/shared/shader_lighting.vs", "../../00-main/shaders/shared/shader_lighting.fs");
     Shader shadowShader("../../00-main/shaders/shared/shadow.vs", "../../00-main/shaders/shared/shadow.fs");
 

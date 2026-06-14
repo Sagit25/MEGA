@@ -359,7 +359,7 @@ int main()
     Shader lightingShader("../../00-main/shaders/shared/shader_lighting.vs", "../../00-main/shaders/shared/shader_lighting.fs"); // you can name your shader files however you like
     Shader shadowShader("../../00-main/shaders/shared/shadow.vs", "../../00-main/shaders/shared/shadow.fs");
     Shader skyboxShader("../../00-main/shaders/shared/shader_skybox.vs", "../../00-main/shaders/shared/shader_skybox.fs");
-    Shader particleShader("../shaders/particle.vs", "../shaders/particle.fs");
+    Shader particleShader("../../00-main/shaders/1-volcano/particle.vs", "../../00-main/shaders/1-volcano/particle.fs");
 
     // define models
     Model toothlessModel = Model("../../00-main/resources/1-volcano/toothless/toothless.obj");

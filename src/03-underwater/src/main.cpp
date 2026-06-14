@@ -109,7 +109,7 @@ int main()
 
     // build and compile our shader program
     // ------------------------------------
-    Shader lightingShader("../shaders/shader_lighting.vs", "../shaders/shader_lighting.fs"); // you can name your shader files however you like
+    Shader lightingShader("../../00-main/shaders/3-underwater/shader_lighting.vs", "../../00-main/shaders/3-underwater/shader_lighting.fs"); // you can name your shader files however you like
     Shader shadowShader("../../00-main/shaders/shared/shadow.vs", "../../00-main/shaders/shared/shadow.fs");
 
 
