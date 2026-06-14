@@ -13,7 +13,7 @@
 #include <glm/glm.hpp>
 
 #include "../model.h"
-#include "../mesh.h"
+#include "../../../00-main/src/shared/mesh.h"
 #include "assimp_glm_helpers.h"
 #include "bone_info.h"
 

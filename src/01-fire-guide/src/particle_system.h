@@ -9,7 +9,7 @@
 #include <cstdlib>
 
 #include "../../00-main/src/shared/shader.h"
-#include "camera.h"
+#include "../../00-main/src/shared/camera.h"
 #include "model.h"
 
 // Particle structure

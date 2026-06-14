@@ -7,14 +7,14 @@
 #include <glm/gtx/transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include "../../00-main/src/shared/shader.h"
-#include "opengl_utils.h"
+#include "../../00-main/src/shared/opengl_utils.h"
 #include <iostream>
 #include <vector>
-#include "camera.h"
-#include "texture.h"
+#include "../../00-main/src/shared/camera.h"
+#include "../../00-main/src/shared/texture.h"
 #include "../../00-main/src/shared/texture_cube.h"
 #include "model.h"
-#include "mesh.h"
+#include "../../00-main/src/shared/mesh.h"
 #include <algorithm>
 #include <cmath>
 
@@ -165,6 +165,7 @@ void drawShadowModelEntities(Shader& shader, const std::vector<Entity*>& entitie
 int main()
 {
     std::cout << "Current main.cpp: hw5_real_final" << std::endl;
+    camera.MovementSpeed = 0.2f;
 
     // glfw: initialize and configure
     // ------------------------------

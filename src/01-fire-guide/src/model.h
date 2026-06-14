@@ -11,8 +11,8 @@
 #include <vector>
 #include <iostream>
 #include <map>
-#include "mesh.h"
-#include "texture.h"
+#include "../../00-main/src/shared/mesh.h"
+#include "../../00-main/src/shared/texture.h"
 
 
 struct SubMesh {
