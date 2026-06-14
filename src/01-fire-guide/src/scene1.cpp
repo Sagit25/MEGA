@@ -28,7 +28,7 @@
 #include "../../00-main/src/shared/scene_module.h"
 
 
-namespace Scene01 {
+namespace Scene1 {
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
@@ -349,6 +349,10 @@ void init(GLFWwindow* window)
     static Model dragonModel("../../00-main/resources/1-volcano/dragon/dragon.obj");
     dragonModel.setDiffuse("../../00-main/resources/1-volcano/dragon/textures/Dragon_Bump_Col2.jpg");
     dragonModel.setNormal("../../00-main/resources/1-volcano/dragon/textures/Dragon_Nor.jpg");
+    static Model fireExtModel = Model("../../00-main/resources/0-main/FireExt/FireExt.obj");
+    fireExtModel.setDiffuse("../../00-main/resources/0-main/FireExt/FireExt_d.jpg");
+    fireExtModel.setSpecular("../../00-main/resources/0-main/FireExt/FireExt_s.jpg");
+    fireExtModel.setNormal("../../00-main/resources/0-main/FireExt/FireExt_n.jpg");
     static Model houseModel = Model("../../00-main/resources/0-main/room/Warehouse.obj");
     static Model sofaModel = Model("../../00-main/resources/0-main/sofa/sofa.obj");
     static Model tableModel = Model("../../00-main/resources/0-main/table/Center Table.obj");
@@ -364,6 +368,7 @@ void init(GLFWwindow* window)
     };
 
     scene.addEntity(new Entity(&houseModel, housePosition, 0.0f, -90.0f + furnitureTurnY, 0.0f, 1.0f));
+    scene.addEntity(new Entity(&fireExtModel, rotateInHouse(glm::vec3(-3.5f, 0.0f, 1.5f)), 0.0f, 180.0f + furnitureTurnY, 0.0f, 0.001f));
     scene.addEntity(new Entity(&sofaModel, rotateInHouse(glm::vec3(-2.5f, 0.1f, 0.5f)), 0.0f, furnitureTurnY, 0.0f, 0.5f));
     scene.addEntity(new Entity(&tableModel, rotateInHouse(glm::vec3(2.5f, 0.0f, 1.0f)), 0.0f, furnitureTurnY, 0.0f, 1.2f));
 
@@ -708,7 +713,7 @@ void renderFrame(GLFWwindow* window)
 
 SceneModule getModule()
 {
-    return { "Scene01", init, onEnter, renderFrame, framebuffer_size_callback, mouse_callback, scroll_callback, getCameraPose, getDefaultCameraPose, setCameraPose };
+    return { "Scene1", init, onEnter, renderFrame, framebuffer_size_callback, mouse_callback, scroll_callback, getCameraPose, getDefaultCameraPose, setCameraPose };
 }
 
 int runStandalone()
@@ -909,11 +914,11 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
     camera.ProcessMouseScroll(yoffset);
 }
 
-} // namespace Scene01
+} // namespace Scene1
 
 #ifndef COMBINED_SCENE_APP
 int main()
 {
-    return Scene01::runStandalone();
+    return Scene1::runStandalone();
 }
 #endif

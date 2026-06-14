@@ -28,7 +28,7 @@
 #include <ctime>
 #include "../../00-main/src/shared/scene_module.h"
 
-namespace Scene03 {
+namespace Scene3 {
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
@@ -115,9 +115,13 @@ void init(GLFWwindow* window)
     static Model boatModel = Model("../../00-main/resources/3-underwater/wooden_boat/wooden_boat.obj", false, true, true);
 
     static Model floorModel = Model("../../00-main/resources/3-underwater/mountain/mountain.obj", true, true, true);
-    static Model houseModel = Model("../../00-main/resources/0-main/room/Warehouse.obj", false, false, true);
-    static Model sofaModel = Model("../../00-main/resources/0-main/sofa/sofa.obj", false, false, true);
-    static Model tableModel = Model("../../00-main/resources/0-main/table/Center Table.obj", false, false, true);
+    static Model fireExtModel = Model("../../00-main/resources/0-main/FireExt/FireExt.obj");
+    fireExtModel.setDiffuse("../../00-main/resources/0-main/FireExt/FireExt_d.jpg");
+    fireExtModel.setSpecular("../../00-main/resources/0-main/FireExt/FireExt_s.jpg");
+    fireExtModel.setNormal("../../00-main/resources/0-main/FireExt/FireExt_n.jpg");
+    static Model houseModel = Model("../../00-main/resources/0-main/room/Warehouse.obj");
+    static Model sofaModel = Model("../../00-main/resources/0-main/sofa/sofa.obj");
+    static Model tableModel = Model("../../00-main/resources/0-main/table/Center Table.obj");
 
     // Add entities to scene.
     // you can change the position/orientation.
@@ -163,6 +167,7 @@ void init(GLFWwindow* window)
     };
 
     scene.addEntity(new Entity(&houseModel, housePosition, 0.0f, -90.0f + furnitureTurnY, 0.0f, 1.0f));
+    scene.addEntity(new Entity(&fireExtModel, rotateInHouse(glm::vec3(-3.5f, 0.0f, 1.5f)), 0.0f, 180.0f + furnitureTurnY, 0.0f, 0.001f));
     scene.addEntity(new Entity(&sofaModel, rotateInHouse(glm::vec3(-2.5f, 0.1f, 0.5f)), 0.0f, furnitureTurnY, 0.0f, 0.5f));
     scene.addEntity(new Entity(&tableModel, rotateInHouse(glm::vec3(2.5f, 0.0f, 1.0f)), 0.0f, furnitureTurnY, 0.0f, 1.2f));
 
@@ -384,20 +389,36 @@ void init(GLFWwindow* window)
                 lightingShader.setMat4("world", modelMatrix);
 
                 for (const SubMesh& subMesh : model->subMeshes) {
-                    lightingShader.setFloat("useSpecularMap", subMesh.specular ? 1.0f : 0.0f);
-                    lightingShader.setFloat("useNormalMap", (subMesh.normal && useNormalMap) ? 1.0f : 0.0f);
+                    lightingShader.setVec3("baseColor", subMesh.baseColor);
 
+                    glActiveTexture(GL_TEXTURE0);
                     if (subMesh.diffuse) {
-                        glActiveTexture(GL_TEXTURE0);
                         glBindTexture(GL_TEXTURE_2D, subMesh.diffuse->ID);
+                        lightingShader.setFloat("useDiffuseMap", 1.0f);
                     }
+                    else {
+                        glBindTexture(GL_TEXTURE_2D, Texture::GetDummyTexture());
+                        lightingShader.setFloat("useDiffuseMap", 0.0f);
+                    }
+
+                    glActiveTexture(GL_TEXTURE1);
                     if (subMesh.specular) {
-                        glActiveTexture(GL_TEXTURE1);
                         glBindTexture(GL_TEXTURE_2D, subMesh.specular->ID);
+                        lightingShader.setFloat("useSpecularMap", 1.0f);
                     }
+                    else {
+                        glBindTexture(GL_TEXTURE_2D, Texture::GetDummyTexture());
+                        lightingShader.setFloat("useSpecularMap", 0.0f);
+                    }
+
+                    glActiveTexture(GL_TEXTURE2);
                     if (subMesh.normal && useNormalMap) {
-                        glActiveTexture(GL_TEXTURE2);
                         glBindTexture(GL_TEXTURE_2D, subMesh.normal->ID);
+                        lightingShader.setFloat("useNormalMap", 1.0f);
+                    }
+                    else {
+                        glBindTexture(GL_TEXTURE_2D, Texture::GetDummyTexture());
+                        lightingShader.setFloat("useNormalMap", 0.0f);
                     }
 
                     glBindVertexArray(subMesh.mesh.VAO);
@@ -422,7 +443,7 @@ void renderFrame(GLFWwindow* window)
 
 SceneModule getModule()
 {
-    return { "Scene03", init, onEnter, renderFrame, framebuffer_size_callback, mouse_callback, scroll_callback, getCameraPose, getDefaultCameraPose, setCameraPose };
+    return { "Scene3", init, onEnter, renderFrame, framebuffer_size_callback, mouse_callback, scroll_callback, getCameraPose, getDefaultCameraPose, setCameraPose };
 }
 
 int runStandalone()
@@ -602,11 +623,11 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
     camera.ProcessMouseScroll(yoffset);
 }
 
-} // namespace Scene03
+} // namespace Scene3
 
 #ifndef COMBINED_SCENE_APP
 int main()
 {
-    return Scene03::runStandalone();
+    return Scene3::runStandalone();
 }
 #endif

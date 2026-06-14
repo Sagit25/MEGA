@@ -13,9 +13,9 @@ file(GLOB SOURCE
 set(SOURCE ${SOURCE} ../glad.c)
 list(APPEND SOURCE
     src/shared/stb_image_impl.cpp
-    ../01-fire-guide/src/main.cpp
-    ../02-desert-mirage/src/main.cpp
-    ../03-underwater/src/main.cpp
+    ../01-fire-guide/src/scene1.cpp
+    ../02-desert-mirage/src/scene2.cpp
+    ../03-underwater/src/scene3.cpp
 )
 set(NAME "main")
 
@@ -37,10 +37,17 @@ if(UNIX)
   if(NOT FREETYPE_LIBRARY OR NOT ASSIMP_LIBRARY)
     message(FATAL_ERROR "freetype and assimp are required.")
   endif()
+  get_filename_component(ASSIMP_LIBRARY_DIR ${ASSIMP_LIBRARY} DIRECTORY)
+  get_filename_component(ASSIMP_PREFIX ${ASSIMP_LIBRARY_DIR} DIRECTORY)
+  get_filename_component(ASSIMP_LIBRARY_REALPATH ${ASSIMP_LIBRARY} REALPATH)
+  get_filename_component(ASSIMP_LIBRARY_REAL_DIR ${ASSIMP_LIBRARY_REALPATH} DIRECTORY)
+  get_filename_component(ASSIMP_REAL_PREFIX ${ASSIMP_LIBRARY_REAL_DIR} DIRECTORY)
   set(LIBS "-L${GLFW_LIBRARY_DIRS}" ${GLFW_STATIC_LIBRARIES} ${FREETYPE_LIBRARY} ${ASSIMP_LIBRARY})
   include_directories(${GLFW_INCLUDE_DIRS})
   include_directories(${GLM_INCLUDE_DIRS})
-  include_directories(${ASSIMP_INCLUDE_DIRS})
+  include_directories(BEFORE ${ASSIMP_REAL_PREFIX}/include)
+  include_directories(BEFORE ${ASSIMP_PREFIX}/include)
+  include_directories(BEFORE ${ASSIMP_INCLUDE_DIRS})
 endif(UNIX)
 
 list(APPEND CMAKE_CXX_FLAGS "-std=c++11")

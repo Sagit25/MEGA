@@ -20,7 +20,7 @@
 #include <cmath>
 #include "../../00-main/src/shared/scene_module.h"
 
-namespace Scene02 {
+namespace Scene2 {
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
@@ -237,6 +237,10 @@ void init(GLFWwindow* window)
     static Texture groundTex("../../00-main/resources/2-desert/pyramid/desert_sand_floor.jpg");
 
     static Model houseModel("../../00-main/resources/0-main/room/Warehouse.obj");
+    static Model fireExtModel("../../00-main/resources/0-main/FireExt/FireExt.obj");
+    fireExtModel.setDiffuse("../../00-main/resources/0-main/FireExt/FireExt_d.jpg");
+    fireExtModel.setSpecular("../../00-main/resources/0-main/FireExt/FireExt_s.jpg");
+    fireExtModel.setNormal("../../00-main/resources/0-main/FireExt/FireExt_n.jpg");
     static Model sofaModel("../../00-main/resources/0-main/sofa/sofa.obj");
     static Model tableModel("../../00-main/resources/0-main/table/Center Table.obj");
 
@@ -255,6 +259,7 @@ void init(GLFWwindow* window)
     };
 
     houseEntities.push_back(new Entity(&houseModel, housePosition, 0.0f, 90.0f, 0.0f, 1.0f));
+    houseEntities.push_back(new Entity(&fireExtModel, rotateInHouse(mapMainPosition(glm::vec3(-1.5f, 0.0f, -2.5f) + mainSceneOffset)), 0.0f, 180.0f + furnitureTurnY, 0.0f, 0.001f));
     houseEntities.push_back(new Entity(&sofaModel, rotateInHouse(mapMainPosition(glm::vec3(-0.5f, 0.1f, -3.5f) + mainSceneOffset)), 0.0f, furnitureTurnY, 0.0f, 0.5f));
     houseEntities.push_back(new Entity(&tableModel, rotateInHouse(mapMainPosition(glm::vec3(4.5f, 0.0f, -3.0f) + mainSceneOffset)), 0.0f, furnitureTurnY, 0.0f, 1.2f));
 
@@ -435,7 +440,7 @@ void renderFrame(GLFWwindow* window)
 
 SceneModule getModule()
 {
-    return { "Scene02", init, onEnter, renderFrame, framebuffer_size_callback, mouse_callback, scroll_callback, getCameraPose, getDefaultCameraPose, setCameraPose };
+    return { "Scene2", init, onEnter, renderFrame, framebuffer_size_callback, mouse_callback, scroll_callback, getCameraPose, getDefaultCameraPose, setCameraPose };
 }
 
 int runStandalone()
@@ -666,11 +671,11 @@ void resizeSceneTarget(int width, int height) {
     glBindTexture(GL_TEXTURE_2D, 0);
 }
 
-} // namespace Scene02
+} // namespace Scene2
 
 #ifndef COMBINED_SCENE_APP
 int main()
 {
-    return Scene02::runStandalone();
+    return Scene2::runStandalone();
 }
 #endif

@@ -9,14 +9,13 @@
 const unsigned int SCR_WIDTH = 1920;
 const unsigned int SCR_HEIGHT = 1080;
 
-namespace Scene00 { SceneModule getModule(); }
-namespace Scene01 { SceneModule getModule(); }
-namespace Scene02 { SceneModule getModule(); }
-namespace Scene03 { SceneModule getModule(); }
+namespace Scene0 { SceneModule getModule(); }
+namespace Scene1 { SceneModule getModule(); }
+namespace Scene2 { SceneModule getModule(); }
+namespace Scene3 { SceneModule getModule(); }
 
 static std::vector<SceneModule> scenes;
 static int activeSceneIndex = 0;
-static bool sceneToggleDone = false;
 
 static SceneModule& activeScene()
 {
@@ -44,51 +43,57 @@ static void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
     }
 }
 
-static void processSceneToggle(GLFWwindow* window)
+static void switchToNextScene(GLFWwindow* window)
 {
-    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
+    if (scenes.empty()) {
+        return;
+    }
+
+    SceneModule& sourceScene = activeScene();
+    SceneCameraPose cameraPose{};
+    SceneCameraPose sourceDefaultPose{};
+    bool hasCameraPose = false;
+    bool hasSourceDefaultPose = false;
+    if (sourceScene.getCameraPose) {
+        sourceScene.getCameraPose(&cameraPose);
+        hasCameraPose = true;
+    }
+    if (sourceScene.getDefaultCameraPose) {
+        sourceScene.getDefaultCameraPose(&sourceDefaultPose);
+        hasSourceDefaultPose = true;
+    }
+
+    activeSceneIndex = (activeSceneIndex + 1) % static_cast<int>(scenes.size());
+    if (activeScene().onEnter) {
+        activeScene().onEnter(window);
+    }
+    if (hasCameraPose && activeScene().setCameraPose) {
+        SceneCameraPose targetPose = cameraPose;
+        SceneCameraPose targetDefaultPose{};
+        if (hasSourceDefaultPose && activeScene().getDefaultCameraPose) {
+            activeScene().getDefaultCameraPose(&targetDefaultPose);
+            targetPose.positionX = targetDefaultPose.positionX + (cameraPose.positionX - sourceDefaultPose.positionX);
+            targetPose.positionY = targetDefaultPose.positionY + (cameraPose.positionY - sourceDefaultPose.positionY);
+            targetPose.positionZ = targetDefaultPose.positionZ + (cameraPose.positionZ - sourceDefaultPose.positionZ);
+            targetPose.yaw = targetDefaultPose.yaw + (cameraPose.yaw - sourceDefaultPose.yaw);
+            targetPose.pitch = targetDefaultPose.pitch + (cameraPose.pitch - sourceDefaultPose.pitch);
+            targetPose.zoom = targetDefaultPose.zoom + (cameraPose.zoom - sourceDefaultPose.zoom);
+        }
+        activeScene().setCameraPose(targetPose);
+    }
+    std::cout << "Active scene: " << activeScene().name << std::endl;
+}
+
+static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
+{
+    (void)scancode;
+    (void)mods;
+
+    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
         glfwSetWindowShouldClose(window, true);
     }
-
-    bool pressed = glfwGetKey(window, GLFW_KEY_TAB) == GLFW_PRESS;
-    if (pressed && !sceneToggleDone) {
-        SceneModule& sourceScene = activeScene();
-        SceneCameraPose cameraPose{};
-        SceneCameraPose sourceDefaultPose{};
-        bool hasCameraPose = false;
-        bool hasSourceDefaultPose = false;
-        if (sourceScene.getCameraPose) {
-            sourceScene.getCameraPose(&cameraPose);
-            hasCameraPose = true;
-        }
-        if (sourceScene.getDefaultCameraPose) {
-            sourceScene.getDefaultCameraPose(&sourceDefaultPose);
-            hasSourceDefaultPose = true;
-        }
-
-        activeSceneIndex = (activeSceneIndex + 1) % static_cast<int>(scenes.size());
-        if (activeScene().onEnter) {
-            activeScene().onEnter(window);
-        }
-        if (hasCameraPose && activeScene().setCameraPose) {
-            SceneCameraPose targetPose = cameraPose;
-            SceneCameraPose targetDefaultPose{};
-            if (hasSourceDefaultPose && activeScene().getDefaultCameraPose) {
-                activeScene().getDefaultCameraPose(&targetDefaultPose);
-                targetPose.positionX = targetDefaultPose.positionX + (cameraPose.positionX - sourceDefaultPose.positionX);
-                targetPose.positionY = targetDefaultPose.positionY + (cameraPose.positionY - sourceDefaultPose.positionY);
-                targetPose.positionZ = targetDefaultPose.positionZ + (cameraPose.positionZ - sourceDefaultPose.positionZ);
-                targetPose.yaw = targetDefaultPose.yaw + (cameraPose.yaw - sourceDefaultPose.yaw);
-                targetPose.pitch = targetDefaultPose.pitch + (cameraPose.pitch - sourceDefaultPose.pitch);
-                targetPose.zoom = targetDefaultPose.zoom + (cameraPose.zoom - sourceDefaultPose.zoom);
-            }
-            activeScene().setCameraPose(targetPose);
-        }
-        std::cout << "Active scene: " << activeScene().name << std::endl;
-        sceneToggleDone = true;
-    }
-    if (!pressed) {
-        sceneToggleDone = false;
+    if (key == GLFW_KEY_TAB && action == GLFW_PRESS) {
+        switchToNextScene(window);
     }
 }
 
@@ -113,6 +118,7 @@ int main()
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
     glfwSetCursorPosCallback(window, mouse_callback);
     glfwSetScrollCallback(window, scroll_callback);
+    glfwSetKeyCallback(window, key_callback);
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
@@ -121,10 +127,10 @@ int main()
     }
 
     scenes = {
-        Scene00::getModule(),
-        Scene01::getModule(),
-        Scene02::getModule(),
-        Scene03::getModule(),
+        Scene0::getModule(),
+        Scene1::getModule(),
+        Scene2::getModule(),
+        Scene3::getModule(),
     };
 
     for (SceneModule& scene : scenes) {
@@ -140,13 +146,12 @@ int main()
     std::cout << "Active scene: " << activeScene().name << std::endl;
 
     while (!glfwWindowShouldClose(window)) {
-        processSceneToggle(window);
         if (activeScene().renderFrame) {
             activeScene().renderFrame(window);
         }
         glfwSwapBuffers(window);
         glfwPollEvents();
-    }₩
+    }
 
     glfwTerminate();
     return 0;

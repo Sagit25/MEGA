@@ -22,7 +22,7 @@
 #include "shared/light.h"
 #include "shared/scene_module.h"
 
-namespace Scene00 {
+namespace Scene0 {
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
@@ -79,41 +79,41 @@ void init(GLFWwindow* window)
 
     // build and compile our shader program
     // ------------------------------------
-    static Shader lightingShader("../shaders/shared/shader_lighting.vs", "../shaders/shared/shader_lighting.fs"); // you can name your shader files however you like
-    static Shader shadowShader("../shaders/shared/shadow.vs", "../shaders/shared/shadow.fs");
-    static Shader skyboxShader("../shaders/shared/shader_skybox.vs", "../shaders/shared/shader_skybox.fs");
+    static Shader lightingShader("../../00-main/shaders/shared/shader_lighting.vs", "../../00-main/shaders/shared/shader_lighting.fs"); // you can name your shader files however you like
+    static Shader shadowShader("../../00-main/shaders/shared/shadow.vs", "../../00-main/shaders/shared/shadow.fs");
+    static Shader skyboxShader("../../00-main/shaders/shared/shader_skybox.vs", "../../00-main/shaders/shared/shader_skybox.fs");
 
 
     // define models
-    static Model brickCubeModel("../resources/0-main/brickcube/brickcube.obj");
-    brickCubeModel.setDiffuse("../resources/0-main/brickcube/brickcube_d.png");
-    brickCubeModel.setSpecular("../resources/0-main/brickcube/brickcube_s.png");
-    brickCubeModel.setNormal("../resources/0-main/brickcube/brickcube_n.png");
+    static Model brickCubeModel("../../00-main/resources/0-main/brickcube/brickcube.obj");
+    brickCubeModel.setDiffuse("../../00-main/resources/0-main/brickcube/brickcube_d.png");
+    brickCubeModel.setSpecular("../../00-main/resources/0-main/brickcube/brickcube_s.png");
+    brickCubeModel.setNormal("../../00-main/resources/0-main/brickcube/brickcube_n.png");
 
-    static Model boulderModel("../resources/0-main/boulder/boulder.obj");
-    boulderModel.setDiffuse("../resources/0-main/boulder/boulder_d.png");
-    boulderModel.setNormal("../resources/0-main/boulder/boulder_n.png");
+    static Model boulderModel("../../00-main/resources/0-main/boulder/boulder.obj");
+    boulderModel.setDiffuse("../../00-main/resources/0-main/boulder/boulder_d.png");
+    boulderModel.setNormal("../../00-main/resources/0-main/boulder/boulder_n.png");
 
-    static Model grassGroundModel = Model("../resources/0-main/plane.obj", true);
-    grassGroundModel.setDiffuse("../resources/0-main/grass_ground.jpg");
+    static Model grassGroundModel = Model("../../00-main/resources/0-main/plane.obj", true);
+    grassGroundModel.setDiffuse("../../00-main/resources/0-main/grass_ground.jpg");
 
-    static Model barrelModel = Model("../resources/0-main/barrel/barrel.obj");
-    barrelModel.setDiffuse("../resources/0-main/barrel/barrel_d.png");
-    barrelModel.setSpecular("../resources/0-main/barrel/barrel_s.png");
-    barrelModel.setNormal("../resources/0-main/barrel/barrel_n.png");
+    static Model barrelModel = Model("../../00-main/resources/0-main/barrel/barrel.obj");
+    barrelModel.setDiffuse("../../00-main/resources/0-main/barrel/barrel_d.png");
+    barrelModel.setSpecular("../../00-main/resources/0-main/barrel/barrel_s.png");
+    barrelModel.setNormal("../../00-main/resources/0-main/barrel/barrel_n.png");
 
-    static Model fireExtModel = Model("../resources/0-main/FireExt/FireExt.obj");
-    fireExtModel.setDiffuse("../resources/0-main/FireExt/FireExt_d.jpg");
-    fireExtModel.setSpecular("../resources/0-main/FireExt/FireExt_s.jpg");
-    fireExtModel.setNormal("../resources/0-main/FireExt/FireExt_n.jpg");
+    static Model fireExtModel = Model("../../00-main/resources/0-main/FireExt/FireExt.obj");
+    fireExtModel.setDiffuse("../../00-main/resources/0-main/FireExt/FireExt_d.jpg");
+    fireExtModel.setSpecular("../../00-main/resources/0-main/FireExt/FireExt_s.jpg");
+    fireExtModel.setNormal("../../00-main/resources/0-main/FireExt/FireExt_n.jpg");
 
-    static Model catModel = Model("../resources/0-main/cat/12221_Cat_v1_l3.obj");
-    catModel.setDiffuse("../resources/0-main/cat/Cat_diffuse.jpg");
+    static Model catModel = Model("../../00-main/resources/0-main/cat/12221_Cat_v1_l3.obj");
+    catModel.setDiffuse("../../00-main/resources/0-main/cat/Cat_diffuse.jpg");
 
-    static Model roomModel = Model("../resources/0-main/room/small_house_obj.obj");
-    static Model houseModel = Model("../resources/0-main/room/Warehouse.obj");
-    static Model sofaModel = Model("../resources/0-main/sofa/sofa.obj");
-    static Model tableModel = Model("../resources/0-main/table/Center Table.obj");
+    static Model roomModel = Model("../../00-main/resources/0-main/room/small_house_obj.obj");
+    static Model houseModel = Model("../../00-main/resources/0-main/room/Warehouse.obj");
+    static Model sofaModel = Model("../../00-main/resources/0-main/sofa/sofa.obj");
+    static Model tableModel = Model("../../00-main/resources/0-main/table/Center Table.obj");
 
 
 
@@ -153,12 +153,12 @@ void init(GLFWwindow* window)
     // skybox
     std::vector<std::string> faces
     {
-        "../resources/0-main/skybox/right.jpg",
-        "../resources/0-main/skybox/left.jpg",
-        "../resources/0-main/skybox/top.jpg",
-        "../resources/0-main/skybox/bottom.jpg",
-        "../resources/0-main/skybox/front.jpg",
-        "../resources/0-main/skybox/back.jpg"
+        "../../00-main/resources/0-main/skybox/right.jpg",
+        "../../00-main/resources/0-main/skybox/left.jpg",
+        "../../00-main/resources/0-main/skybox/top.jpg",
+        "../../00-main/resources/0-main/skybox/bottom.jpg",
+        "../../00-main/resources/0-main/skybox/front.jpg",
+        "../../00-main/resources/0-main/skybox/back.jpg"
     };
     static CubemapTexture skyboxTexture = CubemapTexture(faces);
     static unsigned int VAOskybox = 0, VBOskybox = 0;
@@ -354,7 +354,7 @@ void renderFrame(GLFWwindow* window)
 
 SceneModule getModule()
 {
-    return { "Scene00", init, onEnter, renderFrame, framebuffer_size_callback, mouse_callback, scroll_callback, getCameraPose, getDefaultCameraPose, setCameraPose };
+    return { "Scene0", init, onEnter, renderFrame, framebuffer_size_callback, mouse_callback, scroll_callback, getCameraPose, getDefaultCameraPose, setCameraPose };
 }
 
 int runStandalone()
@@ -533,11 +533,11 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
     camera.ProcessMouseScroll(yoffset);
 }
 
-} // namespace Scene00
+} // namespace Scene0
 
 #ifndef COMBINED_SCENE_APP
 int main()
 {
-    return Scene00::runStandalone();
+    return Scene0::runStandalone();
 }
 #endif

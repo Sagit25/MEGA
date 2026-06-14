@@ -26,7 +26,9 @@ in mat3 TBN;
 in vec4 FragPosLightSpace;
 
 uniform float useNormalMap;
+uniform float useDiffuseMap;
 uniform float useSpecularMap;
+uniform vec3 baseColor;
 uniform float useShadow;
 uniform float useLighting;
 uniform float usePCF;
@@ -137,7 +139,13 @@ float CausticLight(vec3 position, vec3 normal)
 
 void main()
 {
-	vec3 color = texture(material.diffuseSampler, TexCoord).rgb;
+	vec3 color;
+    if (useDiffuseMap > 0.5f) {
+        color = texture(material.diffuseSampler, TexCoord).rgb;
+    }
+    else {
+        color = baseColor;
+    }
 
     // I referenced this part from learnopengl lighting part
     // ambient part
