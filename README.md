@@ -1,6 +1,6 @@
 # MEGA: Magic Elements in Graphical Arts
 
-Spring 2026 SNU Graphics Programming (430.638) final project repository.
+[Spring 2026 SNU Graphics Programming (430.638) course](https://3d.snu.ac.kr/class/graphics26) final project repository.
 
 ## Project Objective
 
