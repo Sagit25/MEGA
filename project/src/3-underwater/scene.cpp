@@ -101,7 +101,7 @@ void init(GLFWwindow* window)
     bassModel.animator = &bassAnimator;
     bassModel.radius *= 0.7;
     bassModel.length *= 0.7;
-    bassAnimation.SetDuration(1670.0);
+    bassAnimation.SetDuration(bassAnimation.GetDuration() * 0.16);
 
     static AnimationModel sharkModel = AnimationModel("../resources/3-underwater/fish/shark/shark.dae", true, false);
     static Animation sharkAnimation("../resources/3-underwater/fish/shark/shark.dae", &sharkModel);
