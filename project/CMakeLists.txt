@@ -2,6 +2,10 @@ cmake_minimum_required(VERSION 3.10)
 cmake_policy(VERSION 3.10)
 project("HW2" C CXX)
 
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/build)
 set(PROJECT_ORIGIN "../")
 
@@ -53,7 +57,6 @@ if(UNIX)
   include_directories(BEFORE ${ASSIMP_INCLUDE_DIRS})
 endif(UNIX)
 
-list(APPEND CMAKE_CXX_FLAGS "-std=c++11")
 add_executable(${NAME} ${SOURCE})
 target_compile_definitions(${NAME} PRIVATE COMBINED_SCENE_APP GRAPHICS_PROJECT_NO_STB_IMAGE_IMPLEMENTATION)
 target_link_libraries(${NAME} ${LIBS})
