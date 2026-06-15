@@ -237,7 +237,7 @@ void init(GLFWwindow* window)
     static Texture objectTex("../resources/2-desert/pyramid/sandstone_diff.jpg");
     static Texture groundTex("../resources/2-desert/pyramid/desert_sand_floor.jpg");
 
-    static Model houseModel("../resources/0-base/room/Warehouse.obj");
+    static Model houseModel("../resources/0-base/room/Warehouse.obj", false, false);
     static Model fireExtModel("../resources/0-base/FireExt/FireExt.obj");
     fireExtModel.setDiffuse("../resources/0-base/FireExt/FireExt_d.jpg");
     fireExtModel.setSpecular("../resources/0-base/FireExt/FireExt_s.jpg");

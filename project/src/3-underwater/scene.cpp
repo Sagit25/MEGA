@@ -120,7 +120,7 @@ void init(GLFWwindow* window)
     fireExtModel.setDiffuse("../resources/0-base/FireExt/FireExt_d.jpg");
     fireExtModel.setSpecular("../resources/0-base/FireExt/FireExt_s.jpg");
     fireExtModel.setNormal("../resources/0-base/FireExt/FireExt_n.jpg");
-    static Model houseModel = Model("../resources/0-base/room/Warehouse.obj");
+    static Model houseModel = Model("../resources/0-base/room/Warehouse.obj", false, false);
     static Model sofaModel = Model("../resources/0-base/sofa/sofa.obj");
     static Model tableModel = Model("../resources/0-base/table/Center Table.obj");
 

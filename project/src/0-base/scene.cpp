@@ -110,7 +110,7 @@ void init(GLFWwindow* window)
     catModel.setDiffuse("../resources/0-base/cat/Cat_diffuse.jpg");
 
     static Model roomModel = Model("../resources/0-base/room/small_house_obj.obj");
-    static Model houseModel = Model("../resources/0-base/room/Warehouse.obj");
+    static Model houseModel = Model("../resources/0-base/room/Warehouse.obj", false, false);
     static Model sofaModel = Model("../resources/0-base/sofa/sofa.obj");
     static Model tableModel = Model("../resources/0-base/table/Center Table.obj");
 
