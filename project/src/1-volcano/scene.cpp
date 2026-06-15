@@ -890,7 +890,6 @@ void processInput(GLFWwindow* window, DirectionalLight* sun)
     if (glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS && isKeyboardDone[GLFW_KEY_F] == false) {
         isKeyboardDone[GLFW_KEY_F] = true;
         fireSpawnRate = std::min(fireSpawnRate + 25, 1000u);
-        std::cout << "Toothless fire spawn rate: " << fireSpawnRate << std::endl;
     }
     if (glfwGetKey(window, GLFW_KEY_F) == GLFW_RELEASE) {
         isKeyboardDone[GLFW_KEY_F] = false;
@@ -899,7 +898,6 @@ void processInput(GLFWwindow* window, DirectionalLight* sun)
     if (glfwGetKey(window, GLFW_KEY_G) == GLFW_PRESS && isKeyboardDone[GLFW_KEY_G] == false) {
         isKeyboardDone[GLFW_KEY_G] = true;
         fireSpawnRate = fireSpawnRate >= 25 ? fireSpawnRate - 25 : 0;
-        std::cout << "Toothless fire spawn rate: " << fireSpawnRate << std::endl;
     }
     if (glfwGetKey(window, GLFW_KEY_G) == GLFW_RELEASE) {
         isKeyboardDone[GLFW_KEY_G] = false;

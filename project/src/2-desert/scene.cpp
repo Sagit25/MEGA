@@ -93,11 +93,6 @@ constexpr float TEMPERATURE_OUTRO_HOLD_SECONDS = 6.0f;
 constexpr float TEMPERATURE_TOTAL_SECONDS =
     TEMPERATURE_INTRO_HOLD_SECONDS + TEMPERATURE_ANIMATION_SECONDS + TEMPERATURE_OUTRO_HOLD_SECONDS;
 
-void test()
-{
-    std::cout << groundTemp << std::endl;
-}
-
 float getGroundTempAtTime(float renderTime)
 {
     const float maximumGroundTemp = 210.0f;
@@ -187,7 +182,6 @@ void init(GLFWwindow* window)
 {
     if (initialized) return;
     initialized = true;
-    std::cout << "Current main.cpp: hw5_real_final" << std::endl;
     camera.MovementSpeed = 0.2f;
     glfwGetFramebufferSize(window, &framebufferWidth, &framebufferHeight);
 
@@ -597,11 +591,6 @@ void processInput(GLFWwindow* window)
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
         camera.ProcessKeyboard(RIGHT, deltaTime);
 
-    if (glfwGetKey(window, GLFW_KEY_K) == GLFW_PRESS) {
-        std::cout << "Position" << camera.Position.x << "," << camera.Position.y << "," << camera.Position.z << std::endl;
-        std::cout << "Yaw" << camera.Yaw << std::endl;
-    }
-
     // Temperature control
     if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) {
         groundTemp += 20.0f * deltaTime; // raise temp
@@ -611,14 +600,6 @@ void processInput(GLFWwindow* window)
         if (groundTemp < 20.0f) groundTemp = 20.0f; // minimum temp
     }
 
-    // Printing temperature (For debugging)
-    if (glfwGetKey(window, GLFW_KEY_T) == GLFW_PRESS && !isKeyboardDone[GLFW_KEY_T]) {
-        std::cout << "Current Ground Temp: " << groundTemp << std::endl;
-        isKeyboardDone[GLFW_KEY_T] = true;
-    }
-    else if (glfwGetKey(window, GLFW_KEY_T) == GLFW_RELEASE) {
-        isKeyboardDone[GLFW_KEY_T] = false;
-    }
 }
 
 // glfw: whenever the window size changed (by OS or user resize) this callback function executes

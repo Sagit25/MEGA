@@ -151,7 +151,6 @@ static void switchToScene(GLFWwindow* window, int targetSceneIndex)
         }
         activeScene().setCameraPose(targetPose);
     }
-    std::cout << "Active scene: " << activeScene().name << std::endl;
 }
 
 static bool isSceneTransitionActive()
@@ -270,7 +269,6 @@ int main()
     if (activeScene().onEnter) {
         activeScene().onEnter(window);
     }
-    std::cout << "Active scene: " << activeScene().name << std::endl;
 
     while (!glfwWindowShouldClose(window)) {
         updateSceneTransition(window);
