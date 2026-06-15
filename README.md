@@ -22,6 +22,7 @@ Sukhun Yang (@Sagit25), Kanghyeon Cho (@KangHyeoni), Taesun Kim (@alexdavid-113)
 
 ### Each Member's work
 - Sukhun Yang: [Sukhun-Yang.md](./documents/Sukhun-Yang.md), Implement base scene and volcano scene (Fire-Guide Feature)
+- Taesun Kim: [Taesun-Kim.md](./documents/Taesun-Kim.md), Implemented desert scene (Mirage Feature) and made final presentation slides
 
 
 ## Code Structure
@@ -90,4 +91,30 @@ To rebuild from a clean CMake directory:
 
 ```sh
 ./build_mac.sh --clean
+```
+
+
+## Build on Windows
+
+You can build the project using the provided batch script. Run the following command from the repository root (using Command Prompt or PowerShell):
+
+```cmd
+.\project\build_windows.bat
+
+```
+
+To rebuild from a clean CMake directory:
+
+```cmd
+.\project\build_windows.bat --clean
+
+```
+
+The build script configures CMake, compiles the executable, and writes the result to `project\build\Release\main.exe`.
+Run the program from the build directory so shaders and resources are resolved correctly:
+
+```cmd
+cd .\project\build
+.\Release\main.exe
+
 ```
