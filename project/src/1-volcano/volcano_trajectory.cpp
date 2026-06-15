@@ -3,6 +3,7 @@
 #include "volcano_trajectory.h"
 
 #include <cmath>
+#include <glm/gtc/constants.hpp>
 
 namespace volcano {
 
@@ -25,7 +26,7 @@ glm::mat4 getToothlessFlightModelMatrix(float time)
 {
     const float straightDuration = 10.0f / 1.5f;
     const float turnDuration = 10.0f;
-    const float pi = static_cast<float>(M_PI);
+    const float pi = glm::pi<float>();
     const float radiusX = 28.0f;
     const float radiusZ = 10.0f;
     const float straightStartBackOffset = 10.0f;
@@ -101,7 +102,7 @@ DragonFlightPose getDragonFlightPose(float time)
 {
     const float straightDuration = 12.0f * flightSpeed / 2.0f;
     const float turnDuration = 14.0f;
-    const float pi = static_cast<float>(M_PI);
+    const float pi = glm::pi<float>();
     const float radiusX = 27.3f;
     const float radiusZ = 21.6f;
     const float straightStartBackOffset = 10.0f;
