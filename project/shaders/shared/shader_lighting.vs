@@ -31,10 +31,7 @@ void main()
 	// I referenced this part from learnopengl shadow code
 	FragPosLightSpace = lightSpaceMatrix * vec4(vec3(world * vec4(aPos, 1.0)), 1.0);
 
-	// on-off by key 1 (useNormalMap).
-    // if model does not have a normal map, this should be always 0.
-    // if useNormalMap is 0, we use a geometric normal as a surface normal.
-    // if useNormalMap is 1, we use a geometric normal altered by normal map as a surface normal.
+	// useNormalMap is set per submesh according to normal-map availability.
 	TBN = mat3(1.0);
 	if (useNormalMap > 0.5 && length(aTangent) > 0.0){
 		// I referenced this part from learnopengl normal code

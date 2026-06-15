@@ -153,27 +153,20 @@ void main()
     vec3 totalColor = ambient;
     vec3 normal = normalize(Normal); // geometric normal
 
-    // on-off by key 3 (useLighting). 
-    // if useLighting is 0, return diffuse value without considering any lighting.(DO NOT CHANGE)
+    // useLighting is fixed on by the scene code.
 	if (useLighting < 0.5f){
         FragColor = vec4(color, 1.0); 
         return; 
     }
 
-    // on-off by key 2 (useShadow).
-    // calculate shadow
-    // if useShadow is 0, do not consider shadow.
-    // if useShadow is 1, consider shadow.
+    // useShadow is fixed on by the scene code.
     float shadow = 0.0f;
     if(useShadow > 0.5f)
     {
         shadow = ShadowCalculation(FragPosLightSpace);
     }
     
-    // on-off by key 1 (useNormalMap).
-    // if model does not have a normal map, this should be always 0.
-    // if useNormalMap is 0, we use a geometric normal as a surface normal.
-    // if useNormalMap is 1, we use a geometric normal altered by normal map as a surface normal.
+    // useNormalMap is set per submesh according to normal-map availability.
 	if(useNormalMap > 0.5f)
 	{
         // I referenced this part from learnopengl normal part

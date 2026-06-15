@@ -37,7 +37,7 @@ inline void endFadeForegroundRender()
     glBindVertexArray(0);
 }
 
-inline void drawLitFadeForegroundEntities(Shader& shader, const std::vector<Entity*>& entities, bool useNormalMap)
+inline void drawLitFadeForegroundEntities(Shader& shader, const std::vector<Entity*>& entities)
 {
     for (Entity* entity : entities) {
         if (!entity || !entity->visible || !entity->model) {
@@ -70,7 +70,7 @@ inline void drawLitFadeForegroundEntities(Shader& shader, const std::vector<Enti
             }
 
             glActiveTexture(GL_TEXTURE2);
-            if (subMesh.normal && useNormalMap) {
+            if (subMesh.normal) {
                 glBindTexture(GL_TEXTURE_2D, subMesh.normal->ID);
                 shader.setFloat("useNormalMap", 1.0f);
             }
@@ -93,10 +93,6 @@ inline void renderLitFadeForegroundEntities(
     DepthMapTexture& depth,
     int framebufferWidth,
     int framebufferHeight,
-    bool useLighting,
-    bool useShadow,
-    bool usePCF,
-    bool useNormalMap,
     CausticTexture* caustics = nullptr,
     int causticFrameCount = 0,
     float currentTime = 0.0f)
@@ -119,9 +115,9 @@ inline void renderLitFadeForegroundEntities(
     glm::mat4 view = camera.GetViewMatrix();
 
     shader.use();
-    shader.setFloat("useLighting", useLighting ? 1.0f : 0.0f);
-    shader.setFloat("useShadow", useShadow ? 1.0f : 0.0f);
-    shader.setFloat("usePCF", usePCF ? 1.0f : 0.0f);
+    shader.setFloat("useLighting", 1.0f);
+    shader.setFloat("useShadow", 1.0f);
+    shader.setFloat("usePCF", 1.0f);
     shader.setVec3("light.dir", light.lightDir);
     shader.setVec3("light.color", light.lightColor);
     shader.setVec3("viewPos", camera.Position);
@@ -139,7 +135,7 @@ inline void renderLitFadeForegroundEntities(
         glBindTexture(GL_TEXTURE_2D_ARRAY, caustics->ID);
     }
 
-    drawLitFadeForegroundEntities(shader, entities, useNormalMap);
+    drawLitFadeForegroundEntities(shader, entities);
     endFadeForegroundRender();
 }
 

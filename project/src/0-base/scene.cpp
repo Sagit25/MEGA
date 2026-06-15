@@ -69,13 +69,6 @@ bool firstMouse = true;
 float deltaTime = 0.0f;	// time between current frame and last frame
 float lastFrame = 0.0f;
 
-bool useNormalMap = true;
-bool useSpecular = false;
-
-bool useLighting = true;
-bool useShadow = true;
-bool usePCF = true;
-
 void init(GLFWwindow* window)
 {
     if (initialized) return;
@@ -265,12 +258,9 @@ void init(GLFWwindow* window)
         // I referenced this part from learnopengl lighting and shadow code
         // set use lighting, use shadow, usePCF to shader
         lightingShader.use();
-        if (useLighting) lightingShader.setFloat("useLighting", 1.0f);
-        else lightingShader.setFloat("useLighting", 0.0f);
-        if (useShadow) lightingShader.setFloat("useShadow", 1.0f);
-        else lightingShader.setFloat("useShadow", 0.0f);
-        if (usePCF) lightingShader.setFloat("usePCF", 1.0f);
-        else lightingShader.setFloat("usePCF", 0.0f);
+        lightingShader.setFloat("useLighting", 1.0f);
+        lightingShader.setFloat("useShadow", 1.0f);
+        lightingShader.setFloat("usePCF", 1.0f);
 
         glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)currentWidth / (float)currentHeight, 0.1f, 100.0f);
         glm::mat4 view = camera.GetViewMatrix();
@@ -314,7 +304,7 @@ void init(GLFWwindow* window)
                 }
 
                 glActiveTexture(GL_TEXTURE2);
-                if (subMesh.normal && useNormalMap) {
+                if (subMesh.normal) {
                     glBindTexture(GL_TEXTURE_2D, subMesh.normal->ID);
                     lightingShader.setFloat("useNormalMap", 1.0f);
                 } else {
@@ -376,11 +366,7 @@ void renderFadeForeground(GLFWwindow* window)
         *fadeForegroundSun,
         *fadeForegroundDepth,
         framebufferWidth,
-        framebufferHeight,
-        useLighting,
-        useShadow,
-        usePCF,
-        useNormalMap
+        framebufferHeight
     );
 }
 
@@ -475,57 +461,7 @@ void processInput(GLFWwindow* window, DirectionalLight* sun)
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
         camera.ProcessKeyboard(RIGHT, deltaTime);
 
-
-    float t = 20.0f * deltaTime;
-    
-    // TODO : 
-    // Arrow key : increase, decrease sun's azimuth, elevation with amount of t.
-    // key 1 : toggle using normal map
-    // key 2 : toggle using shadow
-    // key 3 : toggle using whole lighting
-
-    // arrowkeys
-    if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) sun->processKeyboard(0.0f, t);
-    if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) sun->processKeyboard(0.0f, -t);
-    if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS) sun->processKeyboard(-t, 0.0f);
-    if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) sun->processKeyboard(t, 0.0f);
-
-    // key 1
-    if (glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS && isKeyboardDone[GLFW_KEY_1] == false) {
-        isKeyboardDone[GLFW_KEY_1] = true;
-        useNormalMap = !useNormalMap;
-    }
-    if (glfwGetKey(window, GLFW_KEY_1) == GLFW_RELEASE) {
-        isKeyboardDone[GLFW_KEY_1] = false;
-    }
-
-    // key 2
-    if (glfwGetKey(window, GLFW_KEY_2) == GLFW_PRESS && isKeyboardDone[GLFW_KEY_2] == false) {
-        isKeyboardDone[GLFW_KEY_2] = true;
-        useShadow = !useShadow;
-    }
-    if (glfwGetKey(window, GLFW_KEY_2) == GLFW_RELEASE) {
-        isKeyboardDone[GLFW_KEY_2] = false;
-    }
-
-    // key 3
-    if (glfwGetKey(window, GLFW_KEY_3) == GLFW_PRESS && isKeyboardDone[GLFW_KEY_3] == false) {
-        isKeyboardDone[GLFW_KEY_3] = true;
-        useLighting = !useLighting;
-    }
-    if (glfwGetKey(window, GLFW_KEY_3) == GLFW_RELEASE) {
-        isKeyboardDone[GLFW_KEY_3] = false;
-    }
-
-    // key 4: PCF
-    if (glfwGetKey(window, GLFW_KEY_4) == GLFW_PRESS && isKeyboardDone[GLFW_KEY_4] == false) {
-        isKeyboardDone[GLFW_KEY_4] = true;
-        usePCF = !usePCF;
-    }
-    if (glfwGetKey(window, GLFW_KEY_4) == GLFW_RELEASE) {
-        isKeyboardDone[GLFW_KEY_4] = false;
-    }
-
+    (void)sun;
 }
 
 // glfw: whenever the window size changed (by OS or user resize) this callback function executes
@@ -562,7 +498,9 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 // ----------------------------------------------------------------------
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 {
-    camera.ProcessMouseScroll(yoffset);
+    (void)window;
+    (void)xoffset;
+    (void)yoffset;
 }
 
 } // namespace base
