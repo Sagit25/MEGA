@@ -190,10 +190,10 @@ void init(GLFWwindow* window)
 
     // build and compile our shader program
     // ------------------------------------
-    static Shader rayTracingShader("../../00-main/shaders/2-desert/shader_ray_tracing.vs", "../../00-main/shaders/2-desert/shader_ray_tracing.fs");
-    static Shader heatHazeShader("../../00-main/shaders/2-desert/shader_ray_tracing.vs", "../../00-main/shaders/2-desert/shader_heat_haze.fs");
-    static Shader lightingShader("../../00-main/shaders/shared/shader_lighting.vs", "../../00-main/shaders/shared/shader_lighting.fs");
-    static Shader shadowShader("../../00-main/shaders/shared/shadow.vs", "../../00-main/shaders/shared/shadow.fs");
+    static Shader rayTracingShader("../shaders/2-desert/shader_ray_tracing.vs", "../shaders/2-desert/shader_ray_tracing.fs");
+    static Shader heatHazeShader("../shaders/2-desert/shader_ray_tracing.vs", "../shaders/2-desert/shader_heat_haze.fs");
+    static Shader lightingShader("../shaders/shared/shader_lighting.vs", "../shaders/shared/shader_lighting.fs");
+    static Shader shadowShader("../shaders/shared/shadow.vs", "../shaders/shared/shadow.fs");
 
     std::vector<float> quad_data({
         // positions         // uvs
@@ -211,21 +211,21 @@ void init(GLFWwindow* window)
     // Original skybox data (works well)
     //std::vector<std::string> faces
     //{
-    //    "../../00-main/resources/2-desert/skybox/right.jpg",
-    //    "../../00-main/resources/2-desert/skybox/left.jpg",
-    //    "../../00-main/resources/2-desert/skybox/top.jpg",
-    //    "../../00-main/resources/2-desert/skybox/bottom.jpg",
-    //    "../../00-main/resources/2-desert/skybox/front.jpg",
-    //    "../../00-main/resources/2-desert/skybox/back.jpg"
+    //    "../resources/2-desert/skybox/right.jpg",
+    //    "../resources/2-desert/skybox/left.jpg",
+    //    "../resources/2-desert/skybox/top.jpg",
+    //    "../resources/2-desert/skybox/bottom.jpg",
+    //    "../resources/2-desert/skybox/front.jpg",
+    //    "../resources/2-desert/skybox/back.jpg"
     //};
     std::vector<std::string> faces
     {
-        "../../00-main/resources/2-desert/desert_day/sky_posx.jpg",
-        "../../00-main/resources/2-desert/desert_day/sky_negx.jpg",
-        "../../00-main/resources/2-desert/desert_day/sky_posy.jpg",
-        "../../00-main/resources/2-desert/desert_day/sky_negy.jpg",
-        "../../00-main/resources/2-desert/desert_day/sky_posz.jpg",
-        "../../00-main/resources/2-desert/desert_day/sky_negz.jpg"
+        "../resources/2-desert/desert_day/sky_posx.jpg",
+        "../resources/2-desert/desert_day/sky_negx.jpg",
+        "../resources/2-desert/desert_day/sky_posy.jpg",
+        "../resources/2-desert/desert_day/sky_negy.jpg",
+        "../resources/2-desert/desert_day/sky_posz.jpg",
+        "../resources/2-desert/desert_day/sky_negz.jpg"
     };
     static CubemapTexture skyboxTexture = CubemapTexture(faces);
 
@@ -233,16 +233,16 @@ void init(GLFWwindow* window)
 
 
     // [Project] Texture added
-    static Texture objectTex("../../00-main/resources/2-desert/pyramid/sandstone_diff.jpg");
-    static Texture groundTex("../../00-main/resources/2-desert/pyramid/desert_sand_floor.jpg");
+    static Texture objectTex("../resources/2-desert/pyramid/sandstone_diff.jpg");
+    static Texture groundTex("../resources/2-desert/pyramid/desert_sand_floor.jpg");
 
-    static Model houseModel("../../00-main/resources/0-base/room/Warehouse.obj");
-    static Model fireExtModel("../../00-main/resources/0-base/FireExt/FireExt.obj");
-    fireExtModel.setDiffuse("../../00-main/resources/0-base/FireExt/FireExt_d.jpg");
-    fireExtModel.setSpecular("../../00-main/resources/0-base/FireExt/FireExt_s.jpg");
-    fireExtModel.setNormal("../../00-main/resources/0-base/FireExt/FireExt_n.jpg");
-    static Model sofaModel("../../00-main/resources/0-base/sofa/sofa.obj");
-    static Model tableModel("../../00-main/resources/0-base/table/Center Table.obj");
+    static Model houseModel("../resources/0-base/room/Warehouse.obj");
+    static Model fireExtModel("../resources/0-base/FireExt/FireExt.obj");
+    fireExtModel.setDiffuse("../resources/0-base/FireExt/FireExt_d.jpg");
+    fireExtModel.setSpecular("../resources/0-base/FireExt/FireExt_s.jpg");
+    fireExtModel.setNormal("../resources/0-base/FireExt/FireExt_n.jpg");
+    static Model sofaModel("../resources/0-base/sofa/sofa.obj");
+    static Model tableModel("../resources/0-base/table/Center Table.obj");
 
     static std::vector<Entity*> houseEntities;
     const glm::vec3 mainCameraStart = glm::vec3(0.0f, 1.5f, 0.5f);

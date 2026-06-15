@@ -19,3 +19,4 @@ cmake -S . -B build
 cmake --build build -j"$(sysctl -n hw.logicalcpu)"
 
 echo "Build finished: $SCRIPT_DIR/build/main"
+echo "Run with: cd $SCRIPT_DIR/build && ./main"

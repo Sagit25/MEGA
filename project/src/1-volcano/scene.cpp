@@ -334,28 +334,28 @@ void init(GLFWwindow* window)
 
     // build and compile our shader program
     // ------------------------------------
-    static Shader lightingShader("../../00-main/shaders/shared/shader_lighting.vs", "../../00-main/shaders/shared/shader_lighting.fs"); // you can name your shader files however you like
-    static Shader shadowShader("../../00-main/shaders/shared/shadow.vs", "../../00-main/shaders/shared/shadow.fs");
-    static Shader skyboxShader("../../00-main/shaders/shared/shader_skybox.vs", "../../00-main/shaders/shared/shader_skybox.fs");
-    static Shader particleShader("../../00-main/shaders/1-volcano/particle.vs", "../../00-main/shaders/1-volcano/particle.fs");
+    static Shader lightingShader("../shaders/shared/shader_lighting.vs", "../shaders/shared/shader_lighting.fs"); // you can name your shader files however you like
+    static Shader shadowShader("../shaders/shared/shadow.vs", "../shaders/shared/shadow.fs");
+    static Shader skyboxShader("../shaders/shared/shader_skybox.vs", "../shaders/shared/shader_skybox.fs");
+    static Shader particleShader("../shaders/1-volcano/particle.vs", "../shaders/1-volcano/particle.fs");
 
     // define models
-    static Model toothlessModel = Model("../../00-main/resources/1-volcano/toothless/toothless.obj");
-    static Model boulderModel("../../00-main/resources/1-volcano/boulder/boulder.obj");
-    boulderModel.setDiffuse("../../00-main/resources/1-volcano/boulder/boulder_d.png");
-    boulderModel.setNormal("../../00-main/resources/1-volcano/boulder/boulder_n.png");
-    static Model airplane1Model("../../00-main/resources/1-volcano/airplane1/11803_Airplane_v1_l1.obj");
-    static Model airplane2Model("../../00-main/resources/1-volcano/airplane2/11804_Airplane_v2_l2.obj");
-    static Model dragonModel("../../00-main/resources/1-volcano/dragon/dragon.obj");
-    dragonModel.setDiffuse("../../00-main/resources/1-volcano/dragon/textures/Dragon_Bump_Col2.jpg");
-    dragonModel.setNormal("../../00-main/resources/1-volcano/dragon/textures/Dragon_Nor.jpg");
-    static Model fireExtModel = Model("../../00-main/resources/0-base/FireExt/FireExt.obj");
-    fireExtModel.setDiffuse("../../00-main/resources/0-base/FireExt/FireExt_d.jpg");
-    fireExtModel.setSpecular("../../00-main/resources/0-base/FireExt/FireExt_s.jpg");
-    fireExtModel.setNormal("../../00-main/resources/0-base/FireExt/FireExt_n.jpg");
-    static Model houseModel = Model("../../00-main/resources/0-base/room/Warehouse.obj");
-    static Model sofaModel = Model("../../00-main/resources/0-base/sofa/sofa.obj");
-    static Model tableModel = Model("../../00-main/resources/0-base/table/Center Table.obj");
+    static Model toothlessModel = Model("../resources/1-volcano/toothless/toothless.obj");
+    static Model boulderModel("../resources/1-volcano/boulder/boulder.obj");
+    boulderModel.setDiffuse("../resources/1-volcano/boulder/boulder_d.png");
+    boulderModel.setNormal("../resources/1-volcano/boulder/boulder_n.png");
+    static Model airplane1Model("../resources/1-volcano/airplane1/11803_Airplane_v1_l1.obj");
+    static Model airplane2Model("../resources/1-volcano/airplane2/11804_Airplane_v2_l2.obj");
+    static Model dragonModel("../resources/1-volcano/dragon/dragon.obj");
+    dragonModel.setDiffuse("../resources/1-volcano/dragon/textures/Dragon_Bump_Col2.jpg");
+    dragonModel.setNormal("../resources/1-volcano/dragon/textures/Dragon_Nor.jpg");
+    static Model fireExtModel = Model("../resources/0-base/FireExt/FireExt.obj");
+    fireExtModel.setDiffuse("../resources/0-base/FireExt/FireExt_d.jpg");
+    fireExtModel.setSpecular("../resources/0-base/FireExt/FireExt_s.jpg");
+    fireExtModel.setNormal("../resources/0-base/FireExt/FireExt_n.jpg");
+    static Model houseModel = Model("../resources/0-base/room/Warehouse.obj");
+    static Model sofaModel = Model("../resources/0-base/sofa/sofa.obj");
+    static Model tableModel = Model("../resources/0-base/table/Center Table.obj");
 
     // Add entities to scene.
     static Scene scene;
@@ -417,12 +417,12 @@ void init(GLFWwindow* window)
 
     // skybox (fire)
     std::vector<std::string> faces {
-        "../../00-main/resources/1-volcano/fireskybox/vulcan_bk.jpg",
-        "../../00-main/resources/1-volcano/fireskybox/vulcan_ft.jpg",
-        "../../00-main/resources/1-volcano/fireskybox/vulcan_up.jpg",
-        "../../00-main/resources/1-volcano/fireskybox/vulcan_dn.jpg",
-        "../../00-main/resources/1-volcano/fireskybox/vulcan_lf.jpg",
-        "../../00-main/resources/1-volcano/fireskybox/vulcan_rt.jpg"
+        "../resources/1-volcano/fireskybox/vulcan_bk.jpg",
+        "../resources/1-volcano/fireskybox/vulcan_ft.jpg",
+        "../resources/1-volcano/fireskybox/vulcan_up.jpg",
+        "../resources/1-volcano/fireskybox/vulcan_dn.jpg",
+        "../resources/1-volcano/fireskybox/vulcan_lf.jpg",
+        "../resources/1-volcano/fireskybox/vulcan_rt.jpg"
     };
     static CubemapTexture skyboxTexture = CubemapTexture(faces);
     static unsigned int VAOskybox = 0, VBOskybox = 0;

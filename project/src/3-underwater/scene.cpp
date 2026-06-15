@@ -85,8 +85,8 @@ void init(GLFWwindow* window)
 
     // build and compile our shader program
     // ------------------------------------
-    static Shader lightingShader("../../00-main/shaders/3-underwater/shader_lighting.vs", "../../00-main/shaders/3-underwater/shader_lighting.fs"); // you can name your shader files however you like
-    static Shader shadowShader("../../00-main/shaders/shared/shadow.vs", "../../00-main/shaders/shared/shadow.fs");
+    static Shader lightingShader("../shaders/3-underwater/shader_lighting.vs", "../shaders/3-underwater/shader_lighting.fs"); // you can name your shader files however you like
+    static Shader shadowShader("../shaders/shared/shadow.vs", "../shaders/shared/shadow.fs");
 
 
     // define models
@@ -94,34 +94,34 @@ void init(GLFWwindow* window)
     // (1) diffuse, specular, normal : brickCubeModel
     // (2) diffuse, normal only : boulderModel
     // (3) diffuse only : grassGroundModel
-    static AnimationModel bassModel = AnimationModel("../../00-main/resources/3-underwater/fish/bass/bass.dae", true, false);
-    static Animation bassAnimation("../../00-main/resources/3-underwater/fish/bass/bass.dae", &bassModel);
+    static AnimationModel bassModel = AnimationModel("../resources/3-underwater/fish/bass/bass.dae", true, false);
+    static Animation bassAnimation("../resources/3-underwater/fish/bass/bass.dae", &bassModel);
 	static Animator bassAnimator(&bassAnimation);
     bassModel.animator = &bassAnimator;
     bassModel.radius *= 0.7;
     bassModel.length *= 0.7;
     bassAnimation.SetDuration(1670.0);
 
-    static AnimationModel sharkModel = AnimationModel("../../00-main/resources/3-underwater/fish/shark/shark.dae", true, false);
-    static Animation sharkAnimation("../../00-main/resources/3-underwater/fish/shark/shark.dae", &sharkModel);
+    static AnimationModel sharkModel = AnimationModel("../resources/3-underwater/fish/shark/shark.dae", true, false);
+    static Animation sharkAnimation("../resources/3-underwater/fish/shark/shark.dae", &sharkModel);
 	static Animator sharkAnimator(&sharkAnimation);
     sharkModel.animator = &sharkAnimator;
     sharkModel.radius *= 2;
     sharkModel.length *= 2;
 
-    static Model shellModel = Model("../../00-main/resources/3-underwater/seashell/seashell1/seashell1.obj", false, true, true);
-    static Model shell2Model = Model("../../00-main/resources/3-underwater/seashell/seashell2/seashell2.obj", false, true, true);
-    static Model pebbleModel = Model("../../00-main/resources/3-underwater/seashell/pebble/pebble.obj", false, true, true);
-    static Model boatModel = Model("../../00-main/resources/3-underwater/wooden_boat/wooden_boat.obj", false, true, true);
+    static Model shellModel = Model("../resources/3-underwater/seashell/seashell1/seashell1.obj", false, true, true);
+    static Model shell2Model = Model("../resources/3-underwater/seashell/seashell2/seashell2.obj", false, true, true);
+    static Model pebbleModel = Model("../resources/3-underwater/seashell/pebble/pebble.obj", false, true, true);
+    static Model boatModel = Model("../resources/3-underwater/wooden_boat/wooden_boat.obj", false, true, true);
 
-    static Model floorModel = Model("../../00-main/resources/3-underwater/mountain/mountain.obj", true, true, true);
-    static Model fireExtModel = Model("../../00-main/resources/0-base/FireExt/FireExt.obj");
-    fireExtModel.setDiffuse("../../00-main/resources/0-base/FireExt/FireExt_d.jpg");
-    fireExtModel.setSpecular("../../00-main/resources/0-base/FireExt/FireExt_s.jpg");
-    fireExtModel.setNormal("../../00-main/resources/0-base/FireExt/FireExt_n.jpg");
-    static Model houseModel = Model("../../00-main/resources/0-base/room/Warehouse.obj");
-    static Model sofaModel = Model("../../00-main/resources/0-base/sofa/sofa.obj");
-    static Model tableModel = Model("../../00-main/resources/0-base/table/Center Table.obj");
+    static Model floorModel = Model("../resources/3-underwater/mountain/mountain.obj", true, true, true);
+    static Model fireExtModel = Model("../resources/0-base/FireExt/FireExt.obj");
+    fireExtModel.setDiffuse("../resources/0-base/FireExt/FireExt_d.jpg");
+    fireExtModel.setSpecular("../resources/0-base/FireExt/FireExt_s.jpg");
+    fireExtModel.setNormal("../resources/0-base/FireExt/FireExt_n.jpg");
+    static Model houseModel = Model("../resources/0-base/room/Warehouse.obj");
+    static Model sofaModel = Model("../resources/0-base/sofa/sofa.obj");
+    static Model tableModel = Model("../resources/0-base/table/Center Table.obj");
 
     // Add entities to scene.
     // you can change the position/orientation.
@@ -241,7 +241,7 @@ void init(GLFWwindow* window)
     lightingShader.setVec2("houseEffectMax", 6.0f, 4.0f);
 
     static const int causticFrameCount = 32;
-    const char* causticFrameDirectory = "../../00-main/resources/3-underwater/caustics/caustic_frames";
+    const char* causticFrameDirectory = "../resources/3-underwater/caustics/caustic_frames";
     static CausticTexture causticTexture(causticFrameDirectory, causticFrameCount);
 
     static DirectionalLight sun(-90.0f, 45.0f, glm::vec3(1.0f));

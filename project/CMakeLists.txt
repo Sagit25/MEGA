@@ -3,15 +3,21 @@ cmake_policy(VERSION 3.10)
 project("HW2" C CXX)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/build)
-set(PROJECT_ORIGIN "../../")
+set(PROJECT_ORIGIN "../")
 
 file(GLOB SOURCE
     "src/*.h"
     "src/*.cpp"
 )
 
-set(SOURCE ${SOURCE} ../glad.c)
-list(APPEND SOURCE ../00-main/src/1-volcano/scene.cpp)
+set(SOURCE ${SOURCE} glad.c)
+list(APPEND SOURCE
+    src/shared/stb_image_impl.cpp
+    src/0-base/scene.cpp
+    src/1-volcano/scene.cpp
+    src/2-desert/scene.cpp
+    src/3-underwater/scene.cpp
+)
 set(NAME "main")
 
 link_directories(${PROJECT_ORIGIN}/lib)
@@ -47,6 +53,7 @@ endif(UNIX)
 
 list(APPEND CMAKE_CXX_FLAGS "-std=c++11")
 add_executable(${NAME} ${SOURCE})
+target_compile_definitions(${NAME} PRIVATE COMBINED_SCENE_APP GRAPHICS_PROJECT_NO_STB_IMAGE_IMPLEMENTATION)
 target_link_libraries(${NAME} ${LIBS})
-include_directories(../00-main/src)
+include_directories(src)
 include_directories(${PROJECT_ORIGIN}/includes)
