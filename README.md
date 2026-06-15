@@ -4,15 +4,17 @@ Spring 2026 SNU Graphics Programming (430.638) final project repository.
 
 ## Project Objective
 
+The project features a wooden house shifting through distinct environments, acting as a gateway between worlds.
+Each scene integrates unique graphic features: technical and artistic.
+Then, corresponding landscapes are viewed through a window.
+
 ## Results
 
 - Proposal: [PDF](./documents/Proposal_Team5.pdf)
 - Presentation: [PDF](./documents/Presentation_Team5.pdf)
 - Final Video: [Video](./documents/Video_Team5.mp4)
 
-To overcome computational cost limitations and showcase richer animations, offline rendering was used to create the video.
-
-The code used for making video can be found in the [final_video](https://github.com/Sagit25/MEGA/tree/final-video) branch.
+To overcome computational cost limitations and showcase richer animations, offline rendering was used to create the video. The code used for making video can be found in the [final_video](https://github.com/Sagit25/MEGA/tree/final-video) branch.
 
 ## Team Member
 
