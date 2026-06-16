@@ -258,8 +258,8 @@ void init(GLFWwindow* window)
     lightingShader.setInt("depthMapSampler", 3);
     lightingShader.setInt("causticSampler", 5);
     lightingShader.setFloat("material.shininess", 64.f);    // set shininess to constant value.
-    lightingShader.setVec2("houseEffectMin", -6.0f, -4.0f);
-    lightingShader.setVec2("houseEffectMax", 6.0f, 4.0f);
+    lightingShader.setVec3("houseEffectMin", -6.0f, 0.0f, -4.0f);
+    lightingShader.setVec3("houseEffectMax", 6.0f, 4.0f, 4.0f);
 
     static const int causticFrameCount = 32;
     const char* causticFrameDirectory = "../resources/3-underwater/caustics/caustic_frames";

@@ -39,8 +39,8 @@ const float waterFogDensity = 0.007;
 uniform sampler2DArray causticSampler;
 uniform float currentTime;
 uniform float causticFrameCount;
-uniform vec2 houseEffectMin;
-uniform vec2 houseEffectMax;
+uniform vec3 houseEffectMin;
+uniform vec3 houseEffectMax;
 
 const float causticStrength = 0.85;
 const float causticFrameRate = 18.0;
@@ -115,7 +115,8 @@ vec3 ApplyUnderwaterColor(vec3 litColor)
 bool IsHouseArea(vec3 position)
 {
     return position.x >= houseEffectMin.x && position.x <= houseEffectMax.x
-        && position.z >= houseEffectMin.y && position.z <= houseEffectMax.y;
+        && position.y >= houseEffectMin.y && position.y <= houseEffectMax.y
+        && position.z >= houseEffectMin.z && position.z <= houseEffectMax.z;
 }
 
 float CausticLight(vec3 position, vec3 normal)
