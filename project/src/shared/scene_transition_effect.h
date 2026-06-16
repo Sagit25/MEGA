@@ -1,15 +1,15 @@
 #ifndef SCENE_TRANSITION_EFFECT_H
 #define SCENE_TRANSITION_EFFECT_H
 
-namespace scene_transition_effect {
+namespace scene_fade {
 
 void init();
-bool isActive();
-void request(int targetSceneIndex, float now);
+bool active();
+void start(int sceneIdx, float now);
 int update(float now);
-float getFadeAlpha(float now);
-void drawFadeOverlay(float alpha);
+float alpha(float now);
+void draw(float alpha);
 
-} // namespace scene_transition_effect
+} // namespace scene_fade
 
 #endif

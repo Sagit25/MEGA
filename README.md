@@ -38,7 +38,7 @@ project/
 |   |-- main.cpp                        # App entry point, scene registration, scene switching
 |   |-- shared/                         # Common rendering utilities and reusable scene infrastructure
 |   |   |-- scene_module.h              # Scene interface used by main.cpp
-|   |   |-- scene_transition_effect.*   # Fade transition overlay between scenes
+|   |   |-- scene_transition_effect.*   # scene_fade helper for scene fade transitions
 |   |   |-- fade_foreground.h           # Foreground fade rendering helpers
 |   |   |-- camera.h, shader.h, model.h, mesh.h, texture*.h
 |   |   `-- light.h, scene.h, math_utils.h, opengl_utils.h

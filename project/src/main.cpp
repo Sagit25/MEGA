@@ -16,92 +16,92 @@ namespace desert { SceneModule getModule(); }
 namespace underwater { SceneModule getModule(); }
 
 static std::vector<SceneModule> scenes;
-static int activeSceneIndex = 0;
+static int sceneIdx = 0;
 
-static SceneModule& activeScene()
+static SceneModule& scene()
 {
-    return scenes[activeSceneIndex];
+    return scenes[sceneIdx];
 }
 
 static void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 {
-    if (!scenes.empty() && activeScene().onFramebufferSize) {
-        activeScene().onFramebufferSize(window, width, height);
+    if (!scenes.empty() && scene().onFramebufferSize) {
+        scene().onFramebufferSize(window, width, height);
     }
 }
 
 static void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 {
-    if (!scenes.empty() && activeScene().onMouse) {
-        activeScene().onMouse(window, xpos, ypos);
+    if (!scenes.empty() && scene().onMouse) {
+        scene().onMouse(window, xpos, ypos);
     }
 }
 
 static void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 {
-    if (!scenes.empty() && activeScene().onScroll) {
-        activeScene().onScroll(window, xoffset, yoffset);
+    if (!scenes.empty() && scene().onScroll) {
+        scene().onScroll(window, xoffset, yoffset);
     }
 }
 
-static void switchToScene(GLFWwindow* window, int targetSceneIndex)
+static void switchScene(GLFWwindow* window, int idx)
 {
     if (scenes.empty()) {
         return;
     }
-    if (targetSceneIndex < 0 || targetSceneIndex >= (int)scenes.size()) {
+    if (idx < 0 || idx >= (int)scenes.size()) {
         return;
     }
 
-    SceneModule& sourceScene = activeScene();
-    SceneCameraPose cameraPose{};
-    SceneCameraPose sourceDefaultPose{};
-    bool hasCameraPose = false;
-    bool hasSourceDefaultPose = false;
-    if (sourceScene.getCameraPose) {
-        sourceScene.getCameraPose(&cameraPose);
-        hasCameraPose = true;
+    SceneModule& from = scene();
+    SceneCameraPose pose{};
+    SceneCameraPose fromDef{};
+    bool gotPose = false;
+    bool gotFromDef = false;
+    if (from.getCameraPose) {
+        from.getCameraPose(&pose);
+        gotPose = true;
     }
-    if (sourceScene.getDefaultCameraPose) {
-        sourceScene.getDefaultCameraPose(&sourceDefaultPose);
-        hasSourceDefaultPose = true;
+    if (from.getDefaultCameraPose) {
+        from.getDefaultCameraPose(&fromDef);
+        gotFromDef = true;
     }
 
-    activeSceneIndex = targetSceneIndex;
-    if (activeScene().onEnter) {
-        activeScene().onEnter(window);
+    sceneIdx = idx;
+    if (scene().onEnter) {
+        scene().onEnter(window);
     }
-    if (hasCameraPose && activeScene().setCameraPose) {
-        SceneCameraPose targetPose = cameraPose;
-        SceneCameraPose targetDefaultPose{};
-        if (hasSourceDefaultPose && activeScene().getDefaultCameraPose) {
-            activeScene().getDefaultCameraPose(&targetDefaultPose);
-            targetPose.positionX = targetDefaultPose.positionX + (cameraPose.positionX - sourceDefaultPose.positionX);
-            targetPose.positionY = targetDefaultPose.positionY + (cameraPose.positionY - sourceDefaultPose.positionY);
-            targetPose.positionZ = targetDefaultPose.positionZ + (cameraPose.positionZ - sourceDefaultPose.positionZ);
-            targetPose.yaw = targetDefaultPose.yaw + (cameraPose.yaw - sourceDefaultPose.yaw);
-            targetPose.pitch = targetDefaultPose.pitch + (cameraPose.pitch - sourceDefaultPose.pitch);
-            targetPose.zoom = targetDefaultPose.zoom + (cameraPose.zoom - sourceDefaultPose.zoom);
+    if (gotPose && scene().setCameraPose) {
+        SceneCameraPose toPose = pose;
+        SceneCameraPose toDef{};
+        if (gotFromDef && scene().getDefaultCameraPose) {
+            scene().getDefaultCameraPose(&toDef);
+            toPose.positionX = toDef.positionX + (pose.positionX - fromDef.positionX);
+            toPose.positionY = toDef.positionY + (pose.positionY - fromDef.positionY);
+            toPose.positionZ = toDef.positionZ + (pose.positionZ - fromDef.positionZ);
+            toPose.yaw = toDef.yaw + (pose.yaw - fromDef.yaw);
+            toPose.pitch = toDef.pitch + (pose.pitch - fromDef.pitch);
+            toPose.zoom = toDef.zoom + (pose.zoom - fromDef.zoom);
         }
-        activeScene().setCameraPose(targetPose);
+        scene().setCameraPose(toPose);
     }
 }
 
-static void requestNextSceneTransition()
+static void nextScene()
 {
-    if (scenes.empty() || scene_transition_effect::isActive()) {
+    if (scenes.empty() || scene_fade::active()) {
         return;
     }
 
-    int targetSceneIndex = (activeSceneIndex + 1) % (int)scenes.size();
-    scene_transition_effect::request(targetSceneIndex, (float)glfwGetTime());
+    int nextIdx = (sceneIdx + 1) % (int)scenes.size();
+    scene_fade::start(nextIdx, (float)glfwGetTime());
 }
 
-static void updateSceneTransition(GLFWwindow* window)
+static void tickFade(GLFWwindow* window)
 {
-    int targetSceneIndex = scene_transition_effect::update((float)glfwGetTime());
-    if (targetSceneIndex >= 0) {
-        switchToScene(window, targetSceneIndex);
+    int nextIdx = scene_fade::update((float)glfwGetTime());
+    if (nextIdx >= 0) {
+        switchScene(window, nextIdx);
     }
 }
 
@@ -114,7 +114,7 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
         glfwSetWindowShouldClose(window, true);
     }
     if (key == GLFW_KEY_TAB && action == GLFW_PRESS) {
-        requestNextSceneTransition();
+        nextScene();
     }
 }
 
@@ -146,7 +146,7 @@ int main()
         std::cout << "Failed to initialize GLAD" << std::endl;
         return -1;
     }
-    scene_transition_effect::init();
+    scene_fade::init();
 
     scenes = {
         base::getModule(),
@@ -161,20 +161,20 @@ int main()
         }
     }
 
-    activeSceneIndex = 0;
-    if (activeScene().onEnter) {
-        activeScene().onEnter(window);
+    sceneIdx = 0;
+    if (scene().onEnter) {
+        scene().onEnter(window);
     }
 
     while (!glfwWindowShouldClose(window)) {
-        updateSceneTransition(window);
-        if (activeScene().renderFrame) {
-            activeScene().renderFrame(window);
+        tickFade(window);
+        if (scene().renderFrame) {
+            scene().renderFrame(window);
         }
-        float fadeAlpha = scene_transition_effect::getFadeAlpha((float)glfwGetTime());
-        scene_transition_effect::drawFadeOverlay(fadeAlpha);
-        if (fadeAlpha > 0.0f && activeScene().renderFadeForeground) {
-            activeScene().renderFadeForeground(window);
+        float a = scene_fade::alpha((float)glfwGetTime());
+        scene_fade::draw(a);
+        if (a > 0.0f && scene().renderFadeForeground) {
+            scene().renderFadeForeground(window);
         }
         glfwSwapBuffers(window);
         glfwPollEvents();
