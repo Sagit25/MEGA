@@ -154,12 +154,6 @@ void init(GLFWwindow* window)
         transform = glm::rotate(transform, glm::radians(roll), glm::vec3(0.0f, 0.0f, 1.0f));
         return glm::scale(transform, glm::vec3(scale));
     };
-    auto boatTransform = [](glm::vec3 position, float yaw, float pitch, float scale) {
-        glm::mat4 transform = glm::translate(glm::mat4(1.0f), position);
-        transform = glm::rotate(transform, glm::radians(yaw), glm::vec3(0.0f, 1.0f, 0.0f));
-        transform = glm::rotate(transform, glm::radians(pitch), glm::vec3(1.0f, 0.0f, 0.0f));
-        return glm::scale(transform, glm::vec3(scale));
-    };
     const glm::vec3 housePosition = glm::vec3(0.0f, 0.0f, 0.0f);
     const float furnitureTurnY = 180.0f;
     auto rotateInHouse = [housePosition](glm::vec3 position) {
@@ -172,54 +166,78 @@ void init(GLFWwindow* window)
     addFadeForegroundEntity(scene, fadeForegroundEntities, new Entity(&sofaModel, rotateInHouse(glm::vec3(-2.5f, 0.1f, 0.5f)), 0.0f, furnitureTurnY, 0.0f, 0.5f));
     addFadeForegroundEntity(scene, fadeForegroundEntities, new Entity(&tableModel, rotateInHouse(glm::vec3(2.5f, 0.0f, 1.0f)), 0.0f, furnitureTurnY, 0.0f, 1.2f));
 
-    scene.addEntity(new Entity(&shellModel, propTransform(glm::vec3(-7.6f, -1.05f, -24.0f), -26.0f, -8.0f, 14.0f, 0.28f)));
-    scene.addEntity(new Entity(&shellModel, propTransform(glm::vec3(-6.2f, -1.04f, -25.5f), 24.0f, 6.0f, -18.0f, 0.34f)));
-    scene.addEntity(new Entity(&shellModel, propTransform(glm::vec3(-4.6f, -1.18f, -27.0f), -58.0f, -5.0f, 10.0f, 0.28f)));
-    scene.addEntity(new Entity(&shellModel, propTransform(glm::vec3(-8.7f, -1.22f, -21.6f), 42.0f, -6.0f, 12.0f, 0.26f)));
-    scene.addEntity(new Entity(&shellModel, propTransform(glm::vec3(-9.2f, -0.48f, -26.8f), -18.0f, 7.0f, -16.0f, 0.30f)));
-    scene.addEntity(new Entity(&shellModel, propTransform(glm::vec3(-7.0f, -0.50f, -30.5f), 68.0f, -4.0f, 9.0f, 0.24f)));
-    scene.addEntity(new Entity(&shellModel, propTransform(glm::vec3(-9.8f, -1.06f, -22.8f), -12.0f, 5.0f, -13.0f, 0.25f)));
-    scene.addEntity(new Entity(&shellModel, propTransform(glm::vec3(-17.0f, -0.18f, -21.0f), -20.0f, -7.0f, 12.0f, 0.22f)));
-    scene.addEntity(new Entity(&shellModel, propTransform(glm::vec3(9.0f, -1.18f, -29.6f), 36.0f, -5.0f, 12.0f, 0.22f)));
-    scene.addEntity(new Entity(&shellModel, propTransform(glm::vec3(-14.5f, -0.15f, -22.5f), 38.0f, 6.0f, -15.0f, 0.26f)));
-    scene.addEntity(new Entity(&shellModel, propTransform(glm::vec3(-12.2f, -0.52f, -24.0f), -58.0f, -5.0f, 10.0f, 0.22f)));
-    scene.addEntity(new Entity(&shell2Model, propTransform(glm::vec3(-15.5f, -0.25f, -26.2f), -36.0f, 7.0f, -12.0f, 0.10f)));
-    scene.addEntity(new Entity(&shell2Model, propTransform(glm::vec3(-10.8f, -0.78f, -26.8f), 24.0f, -7.0f, 13.0f, 0.10f)));
-    scene.addEntity(new Entity(&shell2Model, propTransform(glm::vec3(-8.4f, -0.52f, -28.2f), -34.0f, 8.0f, -12.0f, 0.11f)));
-    scene.addEntity(new Entity(&shell2Model, propTransform(glm::vec3(-6.4f, -0.88f, -29.2f), 18.0f, -7.0f, 16.0f, 0.12f)));
-    scene.addEntity(new Entity(&shell2Model, propTransform(glm::vec3(-5.1f, -1.00f, -31.0f), -46.0f, 6.0f, -14.0f, 0.10f)));
-    scene.addEntity(new Entity(&shell2Model, propTransform(glm::vec3(-4.4f, -1.48f, -28.8f), -72.0f, 5.0f, -9.0f, 0.09f)));
-    scene.addEntity(new Entity(&shell2Model, propTransform(glm::vec3(-3.8f, -1.65f, -24.6f), -64.0f, 5.0f, -10.0f, 0.10f)));
-    scene.addEntity(new Entity(&shell2Model, propTransform(glm::vec3(-3.0f, -1.5f, -33.8f), 54.0f, -6.0f, 10.0f, 0.09f)));
-    scene.addEntity(new Entity(&shell2Model, propTransform(glm::vec3(-2.8f, -2.1f, -26.2f), 28.0f, -8.0f, 12.0f, 0.11f)));
-    scene.addEntity(new Entity(&shell2Model, propTransform(glm::vec3(12.2f, -0.76f, -32.0f), -50.0f, 7.0f, -11.0f, 0.09f)));
-    scene.addEntity(new Entity(&pebbleModel, propTransform(glm::vec3(-16.4f, -0.44f, -24.2f), 18.0f, 0.0f, 0.0f, 0.034f)));
-    scene.addEntity(new Entity(&pebbleModel, propTransform(glm::vec3(-13.4f, -0.66f, -25.6f), -32.0f, 0.0f, 0.0f, 0.032f)));
-    scene.addEntity(new Entity(&pebbleModel, propTransform(glm::vec3(-11.5f, -1.30f, -22.6f), 68.0f, 0.0f, 0.0f, 0.034f)));
-    scene.addEntity(new Entity(&pebbleModel, propTransform(glm::vec3(-9.6f, -1.04f, -25.0f), -16.0f, 0.0f, 0.0f, 0.030f)));
-    scene.addEntity(new Entity(&pebbleModel, propTransform(glm::vec3(-18.2f, 0.05f, -23.8f), 44.0f, 0.0f, 0.0f, 0.032f)));
-    scene.addEntity(new Entity(&pebbleModel, propTransform(glm::vec3(-12.8f, 0.08f, -28.0f), -74.0f, 0.0f, 0.0f, 0.030f)));
-    scene.addEntity(new Entity(&pebbleModel, propTransform(glm::vec3(7.0f, -1.87f, -28.5f), 18.0f, 0.0f, 0.0f, 0.048f)));
-    scene.addEntity(new Entity(&pebbleModel, propTransform(glm::vec3(8.4f, -1.73f, -29.2f), -12.0f, 0.0f, 0.0f, 0.040f)));
-    scene.addEntity(new Entity(&pebbleModel, propTransform(glm::vec3(9.8f, -1.58f, -28.8f), 72.0f, 0.0f, 0.0f, 0.044f)));
-    scene.addEntity(new Entity(&pebbleModel, propTransform(glm::vec3(11.2f, -1.40f, -30.0f), -36.0f, 0.0f, 0.0f, 0.050f)));
-    scene.addEntity(new Entity(&pebbleModel, propTransform(glm::vec3(12.6f, -1.26f, -30.8f), 46.0f, 0.0f, 0.0f, 0.038f)));
-    scene.addEntity(new Entity(&pebbleModel, propTransform(glm::vec3(8.0f, -1.59f, -31.0f), -18.0f, 0.0f, 0.0f, 0.042f)));
-    scene.addEntity(new Entity(&pebbleModel, propTransform(glm::vec3(9.4f, -1.40f, -32.0f), 28.0f, 0.0f, 0.0f, 0.040f)));
-    scene.addEntity(new Entity(&pebbleModel, propTransform(glm::vec3(10.8f, -1.37f, -31.7f), -64.0f, 0.0f, 0.0f, 0.036f)));
-    scene.addEntity(new Entity(&pebbleModel, propTransform(glm::vec3(12.0f, -1.19f, -32.4f), 86.0f, 0.0f, 0.0f, 0.044f)));
-    scene.addEntity(new Entity(&pebbleModel, propTransform(glm::vec3(13.4f, -1.11f, -33.2f), -42.0f, 0.0f, 0.0f, 0.036f)));
-    scene.addEntity(new Entity(&pebbleModel, propTransform(glm::vec3(9.8f, -1.58f, -30.5f), 12.0f, 0.0f, 0.0f, 0.038f)));
-    scene.addEntity(new Entity(&pebbleModel, propTransform(glm::vec3(10.5f, -1.25f, -30.8f), 55.0f, 0.0f, 0.0f, 0.036f)));
-    scene.addEntity(new Entity(&pebbleModel, propTransform(glm::vec3(9.2f, -1.29f, -30.9f), -28.0f, 0.0f, 0.0f, 0.034f)));
-    scene.addEntity(new Entity(&pebbleModel, propTransform(glm::vec3(10.0f, -1.20f, -30.6f), 104.0f, 0.0f, 0.0f, 0.032f)));
-    scene.addEntity(new Entity(&pebbleModel, propTransform(glm::vec3(6.4f, -1.81f, -29.8f), -8.0f, 0.0f, 0.0f, 0.036f)));
-    scene.addEntity(new Entity(&pebbleModel, propTransform(glm::vec3(7.2f, -1.44f, -33.5f), 38.0f, 0.0f, 0.0f, 0.040f)));
-    scene.addEntity(new Entity(&pebbleModel, propTransform(glm::vec3(8.8f, -1.33f, -34.0f), -76.0f, 0.0f, 0.0f, 0.034f)));
-    scene.addEntity(new Entity(&pebbleModel, propTransform(glm::vec3(11.5f, -1.08f, -34.2f), 68.0f, 0.0f, 0.0f, 0.038f)));
-    scene.addEntity(new Entity(&pebbleModel, propTransform(glm::vec3(14.0f, -1.08f, -31.4f), -22.0f, 0.0f, 0.0f, 0.036f)));
-    scene.addEntity(new Entity(&pebbleModel, propTransform(glm::vec3(12.8f, -1.29f, -28.4f), 92.0f, 0.0f, 0.0f, 0.034f)));
-    scene.addEntity(new Entity(&boatModel, boatTransform(glm::vec3(13.0f, -1.05f, -36.0f), 22.0f, 5.0f, 6.2f)));
+    static const float propData[][7] = {
+        { -7.6f, -1.05f, -24.0f, -26.0f, -8.0f, 14.0f, 0.28f },
+        { -6.2f, -1.04f, -25.5f, 24.0f, 6.0f, -18.0f, 0.34f },
+        { -4.6f, -1.18f, -27.0f, -58.0f, -5.0f, 10.0f, 0.28f },
+        { -8.7f, -1.22f, -21.6f, 42.0f, -6.0f, 12.0f, 0.26f },
+        { -9.2f, -0.48f, -26.8f, -18.0f, 7.0f, -16.0f, 0.30f },
+        { -7.0f, -0.50f, -30.5f, 68.0f, -4.0f, 9.0f, 0.24f },
+        { -9.8f, -1.06f, -22.8f, -12.0f, 5.0f, -13.0f, 0.25f },
+        { -17.0f, -0.18f, -21.0f, -20.0f, -7.0f, 12.0f, 0.22f },
+        { 9.0f, -1.18f, -29.6f, 36.0f, -5.0f, 12.0f, 0.22f },
+        { -14.5f, -0.15f, -22.5f, 38.0f, 6.0f, -15.0f, 0.26f },
+        { -12.2f, -0.52f, -24.0f, -58.0f, -5.0f, 10.0f, 0.22f },
+        { -15.5f, -0.25f, -26.2f, -36.0f, 7.0f, -12.0f, 0.10f },
+        { -10.8f, -0.78f, -26.8f, 24.0f, -7.0f, 13.0f, 0.10f },
+        { -8.4f, -0.52f, -28.2f, -34.0f, 8.0f, -12.0f, 0.11f },
+        { -6.4f, -0.88f, -29.2f, 18.0f, -7.0f, 16.0f, 0.12f },
+        { -5.1f, -1.00f, -31.0f, -46.0f, 6.0f, -14.0f, 0.10f },
+        { -4.4f, -1.48f, -28.8f, -72.0f, 5.0f, -9.0f, 0.09f },
+        { -3.8f, -1.65f, -24.6f, -64.0f, 5.0f, -10.0f, 0.10f },
+        { -3.0f, -1.5f, -33.8f, 54.0f, -6.0f, 10.0f, 0.09f },
+        { -2.8f, -2.1f, -26.2f, 28.0f, -8.0f, 12.0f, 0.11f },
+        { 12.2f, -0.76f, -32.0f, -50.0f, 7.0f, -11.0f, 0.09f },
+        { -16.4f, -0.44f, -24.2f, 18.0f, 0.0f, 0.0f, 0.034f },
+        { -13.4f, -0.66f, -25.6f, -32.0f, 0.0f, 0.0f, 0.032f },
+        { -11.5f, -1.30f, -22.6f, 68.0f, 0.0f, 0.0f, 0.034f },
+        { -9.6f, -1.04f, -25.0f, -16.0f, 0.0f, 0.0f, 0.030f },
+        { -18.2f, 0.05f, -23.8f, 44.0f, 0.0f, 0.0f, 0.032f },
+        { -12.8f, 0.08f, -28.0f, -74.0f, 0.0f, 0.0f, 0.030f },
+        { 7.0f, -1.87f, -28.5f, 18.0f, 0.0f, 0.0f, 0.048f },
+        { 8.4f, -1.73f, -29.2f, -12.0f, 0.0f, 0.0f, 0.040f },
+        { 9.8f, -1.58f, -28.8f, 72.0f, 0.0f, 0.0f, 0.044f },
+        { 11.2f, -1.40f, -30.0f, -36.0f, 0.0f, 0.0f, 0.050f },
+        { 12.6f, -1.26f, -30.8f, 46.0f, 0.0f, 0.0f, 0.038f },
+        { 8.0f, -1.59f, -31.0f, -18.0f, 0.0f, 0.0f, 0.042f },
+        { 9.4f, -1.40f, -32.0f, 28.0f, 0.0f, 0.0f, 0.040f },
+        { 10.8f, -1.37f, -31.7f, -64.0f, 0.0f, 0.0f, 0.036f },
+        { 12.0f, -1.19f, -32.4f, 86.0f, 0.0f, 0.0f, 0.044f },
+        { 13.4f, -1.11f, -33.2f, -42.0f, 0.0f, 0.0f, 0.036f },
+        { 9.8f, -1.58f, -30.5f, 12.0f, 0.0f, 0.0f, 0.038f },
+        { 10.5f, -1.25f, -30.8f, 55.0f, 0.0f, 0.0f, 0.036f },
+        { 9.2f, -1.29f, -30.9f, -28.0f, 0.0f, 0.0f, 0.034f },
+        { 10.0f, -1.20f, -30.6f, 104.0f, 0.0f, 0.0f, 0.032f },
+        { 6.4f, -1.81f, -29.8f, -8.0f, 0.0f, 0.0f, 0.036f },
+        { 7.2f, -1.44f, -33.5f, 38.0f, 0.0f, 0.0f, 0.040f },
+        { 8.8f, -1.33f, -34.0f, -76.0f, 0.0f, 0.0f, 0.034f },
+        { 11.5f, -1.08f, -34.2f, 68.0f, 0.0f, 0.0f, 0.038f },
+        { 14.0f, -1.08f, -31.4f, -22.0f, 0.0f, 0.0f, 0.036f },
+        { 12.8f, -1.29f, -28.4f, 92.0f, 0.0f, 0.0f, 0.034f },
+        { 13.0f, -1.05f, -36.0f, 22.0f, 5.0f, 0.0f, 6.2f }
+    };
+    const int shell2Start = 11;
+    const int pebbleStart = 21;
+    const int boatStart = 47;
+    const int propCount = sizeof(propData) / sizeof(propData[0]);
+    for (int i = 0; i < propCount; ++i) {
+        Model* propModel = &shellModel;
+        if (i >= boatStart) {
+            propModel = &boatModel;
+        }
+        else if (i >= pebbleStart) {
+            propModel = &pebbleModel;
+        }
+        else if (i >= shell2Start) {
+            propModel = &shell2Model;
+        }
+
+        const float* p = propData[i];
+        scene.addEntity(new Entity(propModel, propTransform(
+            glm::vec3(p[0], p[1], p[2]),
+            p[3], p[4], p[5], p[6]
+        )));
+    }
     scene.addEntity(new Entity(&floorModel, glm::translate(glm::vec3(-40.0f, -3.05f, -40.0f)) * glm::scale(glm::vec3(0.018f, 0.008f, 0.018f))));
     scene.addEntity(new Entity(&floorModel, glm::translate(glm::vec3(40.0f, -3.05f, -40.0f)) * glm::scale(glm::vec3(0.018f, 0.008f, 0.018f))));
     scene.addEntity(new Entity(&floorModel, glm::translate(glm::vec3(-40.0f, -3.05f, 40.0f)) * glm::scale(glm::vec3(0.018f, 0.008f, 0.018f))));
