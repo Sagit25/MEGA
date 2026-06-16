@@ -121,3 +121,9 @@ cd .\project\build
 .\Release\main.exe
 
 ```
+
+## How to Control
+
+- `WASD` key for camera movements
+- `TAB` key for scene transition
+- mouse control for change view point
