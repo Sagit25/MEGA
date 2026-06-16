@@ -20,9 +20,10 @@ To overcome computational cost limitations and showcase richer animations, offli
 
 Sukhun Yang (@Sagit25), Kanghyeon Cho (@KangHyeoni), Taesun Kim (@alexdavid-113)
 
-### Each Member's work (Implementation)
-- Sukhun Yang: [Sukhun-Yang.md](./documents/Sukhun-Yang.md), Implement base scene and volcano scene (Fire-Guide Feature)
-- Taesun Kim: [Taesun-Kim.md](./documents/Taesun-Kim.md), Implemented desert scene (Mirage Feature)
+### Each Member's work
+- Sukhun Yang: [Sukhun-Yang.md](./documents/Sukhun-Yang.md), Implement the base scene and the volcano scene (Fire-Guide Feature)
+- Taesun Kim: [Taesun-Kim.md](./documents/Taesun-Kim.md), Implemented the desert scene (Mirage Feature) and made the final presentation slides
+- Kanghyeon Cho: [Kanghyeon-Cho.md](./documents/Kanghyeon-Cho.md), Implemented the underwater scene, integrated all scenes into a single application, and produced the final video.
 
 
 ## Code Structure
