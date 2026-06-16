@@ -14,7 +14,7 @@ Then, corresponding landscapes are viewed through a window.
 - Presentation: [PDF](./documents/Presentation_Team5.pdf)
 - Final Video: [Video](./documents/Video_Team5.mp4)
 
-To overcome computational cost limitations and showcase richer animations, offline rendering was used to create the video. The code used for making video can be found in the [final_video](https://github.com/Sagit25/MEGA/tree/final-video) branch.
+To overcome computational cost limitations and showcase richer animations, offline rendering was used to create the video.
 
 ## Team Member
 
