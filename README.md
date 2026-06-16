@@ -20,20 +20,16 @@ To overcome computational cost limitations and showcase richer animations, offli
 
 Sukhun Yang, Kanghyeon Cho, Taesun Kim
 
-### Each Member's work
+### Each Member's work (Implementation)
 - Sukhun Yang: [Sukhun-Yang.md](./documents/Sukhun-Yang.md), Implement the base scene and the volcano scene (Fire-Guide Feature)
-- Taesun Kim: [Taesun-Kim.md](./documents/Taesun-Kim.md), Implemented the desert scene (Mirage Feature) and made the final presentation slides
-- Kanghyeon Cho: [Kanghyeon-Cho.md](./documents/Kanghyeon-Cho.md), Implemented the underwater scene (Skeletal-Animation, Boids Algorithm Feature), integrated all scenes into a single application, and produced the final video.
+- Taesun Kim: [Taesun-Kim.md](./documents/Taesun-Kim.md), Implemented the desert scene (Mirage Feature)
+- Kanghyeon Cho: [Kanghyeon-Cho.md](./documents/Kanghyeon-Cho.md), Implemented the underwater scene (Skeletal-Animation, Boids Algorithm Feature), integrated all scenes into a single application and offline rendering
 
 
 ## Code Structure
 
 ```text
 project/
-|-- CMakeLists.txt                      # CMake build configuration
-|-- build_mac.sh                        # macOS build helper script
-|-- glad.c                              # GLAD OpenGL loader implementation
-|-- build/                              # Generated build output and main executable
 |-- src/
 |   |-- main.cpp                        # App entry point, scene registration, scene switching
 |   |-- shared/                         # Common rendering utilities and reusable scene infrastructure
@@ -58,14 +54,20 @@ project/
 |   |-- 1-volcano/                      # Volcano particle shaders
 |   |-- 2-desert/                       # Ray tracing and heat haze shaders
 |   `-- 3-underwater/                   # Underwater lighting shaders
-`-- resources/
-    |-- 0-base/                         # Shared room, furniture, and prop assets
-    |-- 1-volcano/                      # Volcano, dragon, airplane, boulder, and skybox assets
-    |-- 2-desert/                       # Desert skybox and pyramid textures
-    `-- 3-underwater/                   # Fish, boat, caustics, seashell, and terrain assets
+|-- resources/
+|   |-- 0-base/                         # Shared room, furniture, and prop assets
+|   |-- 1-volcano/                      # Volcano, dragon, airplane, boulder, and skybox assets
+|   |-- 2-desert/                       # Desert skybox and pyramid textures
+|   `-- 3-underwater/                   # Fish, boat, caustics, seashell, and terrain assets
+|-- CMakeLists.txt                      # CMake build configuration
+|-- build_mac.sh                        # MacOS build helper script
+|-- build_windows.bat                   # Windows build helper script
+`-- glad.c                              # GLAD OpenGL loader implementation
 ```
 
-## Build on macOS
+## How to Build
+
+### Build on MacOS
 
 Install the required build tools and libraries with Homebrew:
 
@@ -95,7 +97,7 @@ To rebuild from a clean CMake directory:
 ```
 
 
-## Build on Windows
+### Build on Windows
 
 You can build the project using the provided batch script. Run the following command from the repository root (using Command Prompt or PowerShell):
 
