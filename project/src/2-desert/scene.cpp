@@ -185,10 +185,6 @@ void init(GLFWwindow* window)
     camera.MovementSpeed = 0.2f;
     glfwGetFramebufferSize(window, &framebufferWidth, &framebufferHeight);
 
-    // configure global opengl state
-    // -----------------------------
-    // glEnable(GL_DEPTH_TEST);
-
     // build and compile our shader program
     // ------------------------------------
     static Shader rayTracingShader("../shaders/2-desert/shader_ray_tracing.vs", "../shaders/2-desert/shader_ray_tracing.fs");
@@ -209,16 +205,6 @@ void init(GLFWwindow* window)
     static VAO* quad = getVAOFromAttribData(quad_data, attrib_sizes, quad_indices_vec);
     initSceneTarget(framebufferWidth, framebufferHeight);
 
-    // Original skybox data (works well)
-    //std::vector<std::string> faces
-    //{
-    //    "../resources/2-desert/skybox/right.jpg",
-    //    "../resources/2-desert/skybox/left.jpg",
-    //    "../resources/2-desert/skybox/top.jpg",
-    //    "../resources/2-desert/skybox/bottom.jpg",
-    //    "../resources/2-desert/skybox/front.jpg",
-    //    "../resources/2-desert/skybox/back.jpg"
-    //};
     std::vector<std::string> faces
     {
         "../resources/2-desert/desert_day/sky_posx.jpg",

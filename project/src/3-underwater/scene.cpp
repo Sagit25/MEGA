@@ -22,7 +22,6 @@
 #include "animation/model_animation.h"
 #include "animation/animation.h"
 #include "animation/animator.h"
-// #include "animation/spline_path.h"
 #include "animation/boid.h"
 #include <cstdlib>
 #include <ctime>

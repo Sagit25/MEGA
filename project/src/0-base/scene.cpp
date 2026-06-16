@@ -139,9 +139,6 @@ void init(GLFWwindow* window)
     };
 
     addFadeForegroundEntity(scene, fadeForegroundEntities, new Entity(&fireExtModel, rotateInHouse(glm::vec3(-1.5f, 0.0f, -2.5f) + sceneOffset), 0.0f, 180.0f + furnitureTurnY, 0.0f, 0.001f));
-    // scene.addEntity(new Entity(&barrelModel, rotateInHouse(glm::vec3(-2.0f, 0.54f, 5.0f) + sceneOffset), 0, 0 + furnitureTurnY, 0, 0.05f));
-    // scene.addEntity(new Entity(&catModel, rotateInHouse(glm::vec3(3.8f, 0.0f, -5.0f) + sceneOffset), -90.0f, 0.0f + furnitureTurnY, 0.0f, 0.02f));
-    // scene.addEntity(new Entity(&roomModel, rotateInHouse(glm::vec3(-4.0f, 0.0f, 4.0f) + sceneOffset), 0.0f, 90.0f + furnitureTurnY, 0.0f, 0.02f));
     addFadeForegroundEntity(scene, fadeForegroundEntities, new Entity(&houseModel, housePosition, 0.0f, 90.0f, 0.0f, 1.0f));
     addFadeForegroundEntity(scene, fadeForegroundEntities, new Entity(&sofaModel, rotateInHouse(glm::vec3(-0.5f, 0.1f, -3.5f) + sceneOffset), 0.0f, 0.0f + furnitureTurnY, 0.0f, 0.5f));
     addFadeForegroundEntity(scene, fadeForegroundEntities, new Entity(&tableModel, rotateInHouse(glm::vec3(4.5f, 0.0f, -3.0f) + sceneOffset), 0.0f, 0.0f + furnitureTurnY, 0.0f, 1.2f));

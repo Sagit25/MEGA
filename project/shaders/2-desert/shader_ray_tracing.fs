@@ -3,7 +3,6 @@ out vec4 FragColor;
 
 in vec2 TexCoords;
 
-// You can change the code whatever you want
 #define PI 3.14159265359
 
 const int MAX_DEPTH = 10; // maximum bounce
@@ -61,11 +60,6 @@ Pyramid pyramids[] = Pyramid[](
     Pyramid(vec3(10.0, -0.5, -29.0), 4.0, material_sphere_middle)
 );
 
-//float rand(vec2 co) {
-//  return fract(sin(dot(co.xy, vec2(12.9898,78.233))) * 43758.5453);
-//}
-
-
 uniform vec3 cameraPosition;
 uniform mat3 cameraToWorldRotMatrix;
 uniform float fovY; //set to 45
@@ -86,8 +80,6 @@ const float MIRAGE_DEPTH_END = 28.0;
 const float MIRAGE_LAYER_HEIGHT = 1.4;
 
 Ray getRay(vec2 uv){
-    // TODO
-
     vec2 uv_ndc = 2.0 * uv - 1.0;
     float tan_half = tan(fovY * 0.5);
 
@@ -291,87 +283,7 @@ vec3 drawTemperatureUI(vec3 sceneColor) {
 
     return color;
 }
-
-
-
-// Project: Non-linear Ray Tracing
-//// simple checker pattern using position vector p
-//vec3 getProceduralColor(vec3 p, vec3 baseColor) {
-//    float scale = 2.0;
-//    // checker pattern with x-z coord
-//    float pattern = mod(floor(p.x * scale) + floor(p.z * scale), 2.0);
-//    return pattern == 0.0 ? baseColor : baseColor * 0.5; // cross colors darkly(?)
-//}
-
-
-//// Temperature V0: Basic
-//float getTemperature(vec3 p) {
-//    float height = p.y - groundHeight;
-//    if (height < 0.0) height = 0.0;
-//    
-//    // Exponential temperature function
-//    float decay = exp(-3.0 * height); 
-//
-//    //// Linear temp function (BAD)
-//    //float decay = (skyHeight - height) / (skyHeight - groundHeight);
-//
-//    return skyTemp + (groundTemp - skyTemp) * decay;
-//}
-
-//// Temperature V1: Cylindrical Hot Area
-//float getTemperature(vec3 p) {
-//    float height = p.y - groundHeight;
-//    if (height < 0.0) height = 0.0;
-//
-//    float roadWidth = 5.0; 
-//    float localHeatFactor = exp(-(p.x * p.x) / (roadWidth * roadWidth));
-//
-//    float depthFactor = smoothstep(-2.0, -15.0, p.z);
-//    localHeatFactor *= depthFactor;
-//
-//    float currentGroundTemp = skyTemp + (groundTemp - skyTemp) * localHeatFactor;
-//    
-//    float decay = exp(-3.0 * height);
-//
-//    return skyTemp + (currentGroundTemp - skyTemp) * decay;
-//}
-
-
-// // Temperature V2: Road Model (ground line remains flat)
-//float getTemperature(vec3 p) {
-//    float height = p.y - groundHeight;
-//    if (height < 0.0) height = 0.0;
-//
-//    // Road model: cools only along the X-axis (left-right),
-//    // while the heat extends far along the Z-axis (forward-backward).
-//    float roadWidth = 15.0; // Use a very wide road to avoid horizontal lens distortion.
-//    float localHeatFactor = exp(-(p.x * p.x) / (roadWidth * roadWidth));
-//
-//    // (Optional) Z-axis attenuation:
-//    // The area near the camera (z = 0) remains normal,
-//    // while regions farther away become hotter.
-//    // This helps reinforce the fact that mirages appear on distant ground.
-//    float depthFactor = smoothstep(0.0, -10.0, p.z);
-//    localHeatFactor *= depthFactor;
-//
-//    // Compute the temperature within the road region.
-//    float currentGroundTemp = skyTemp + (groundTemp - skyTemp) * localHeatFactor;
-//
-//    // Prevent excessive vertical compression:
-//    // Increase the thickness of the heat layer by making the decay more gradual.
-//    float decay = exp(-1.2 * height); // Changed from -3.0 to -1.2
-//
-//    // Heat-haze noise (the shimmering effect emphasized in the paper).
-//    // Adjust 15.0 (frequency) and 0.1 (amplitude)
-//    // to control the size and intensity of the shimmer.
-//    float noise = sin(p.x * 15.0) * cos(p.z * 15.0) * 0.1;
-//    float turbulence = noise * decay;
-//
-//    return skyTemp + (currentGroundTemp - skyTemp) * (decay + turbulence);
-//}
-
-
-// Temp V3: Dynamic Scene
+// Temperature field
 float getTemperature(vec3 p) {
     // ==========================================================
     // Spatial Shape Configuration
