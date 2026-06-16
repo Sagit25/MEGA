@@ -8,7 +8,6 @@ layout (location = 5) in vec4 weights;
 
 out vec2 TexCoord;
 
-// I referenced this part from learnopengl lighting and normal and shadow part code
 out vec3 Normal;
 out vec3 FragPos;
 out mat3 TBN;
@@ -29,6 +28,7 @@ void main()
 {
 	TexCoord = aTexCoord;
 
+	// Applying bone transformation to vertices
 	vec4 totalPosition = vec4(0.0f);
 	float totalWeight = 0.0f;
     for (int i = 0 ; i < MAX_BONE_INFLUENCE ; i++)
@@ -48,12 +48,10 @@ void main()
 	if (totalWeight == 0.0f)
 		totalPosition = vec4(aPos, 1.0f);
 
-	// I referenced this part from learnopengl lighting code
 	FragPos = vec3(world * totalPosition);
 	mat3 normalMatrix = mat3(transpose(inverse(world)));
 	Normal = normalMatrix * aNormal; 
 
-	// I referenced this part from learnopengl shadow code
 	FragPosLightSpace = lightSpaceMatrix * vec4(vec3(world * totalPosition), 1.0);
 
 	// useNormalMap is set per submesh according to normal-map availability.
