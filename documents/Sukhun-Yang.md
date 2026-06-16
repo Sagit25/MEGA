@@ -52,7 +52,6 @@ Main implementation details:
 - Loaded and configured the base-scene models and textures, including the warehouse/house, fire extinguisher, sofa, table, tiled grass ground, and skybox.
 - Arranged the indoor props with manually tuned position, rotation, and scale values so the scene reads as a composed room rather than a random asset collection.
 - Added directional lighting, normal/specular/diffuse texture binding, shadow-map rendering, PCF shadow usage, and skybox rendering. (almost same as HW2, changed in model loading and texture binding implementation)
-- Exposed the scene through `base::getModule()`, `renderFrame()`, `renderFadeForeground()`, `getCameraPose()`, and `setCameraPose()` so it can be used by the combined multi-scene application.
 
 This scene provides the visual anchor used before transitioning into the elemental scenes.
 It also keeps the base scene reusable instead of being tied to a separate standalone `main()` only.
